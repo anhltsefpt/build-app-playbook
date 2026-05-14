@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Astro MCP Research Playbook — App Idea Validation</title>
+  <style>
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --surface-2: #242836;
+      --border: #2e3348;
+      --text: #e4e6ef;
+      --text-muted: #8b90a5;
+      --accent: #6c8cff;
+      --accent-dim: #4a6ad9;
+      --green: #4ade80;
+      --red: #f87171;
+      --yellow: #fbbf24;
+      --orange: #fb923c;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      padding: 2rem;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 0.25rem;
+      color: var(--accent);
+    }
+
+    h2 {
+      font-size: 1.4rem;
+      font-weight: 600;
+      margin: 2.5rem 0 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--border);
+      color: var(--text);
+    }
+
+    h3 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin: 1.5rem 0 0.75rem;
+      color: var(--accent);
+    }
+
+    .subtitle {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      margin-bottom: 2rem;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .card-highlight {
+      border-left: 3px solid var(--accent);
+    }
+
+    .card-warn {
+      border-left: 3px solid var(--yellow);
+    }
+
+    .card-kill {
+      border-left: 3px solid var(--red);
+    }
+
+    .card-go {
+      border-left: 3px solid var(--green);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1rem 0;
+      font-size: 0.9rem;
+    }
+
+    th {
+      background: var(--surface-2);
+      color: var(--accent);
+      font-weight: 600;
+      text-align: left;
+      padding: 0.75rem 1rem;
+      border-bottom: 2px solid var(--border);
+    }
+
+    td {
+      padding: 0.65rem 1rem;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+
+    tr:hover td { background: var(--surface-2); }
+
+    .tag {
+      display: inline-block;
+      padding: 0.15rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .tag-kill { background: rgba(248,113,113,0.15); color: var(--red); }
+    .tag-maybe { background: rgba(251,191,36,0.15); color: var(--yellow); }
+    .tag-go { background: rgba(74,222,128,0.15); color: var(--green); }
+    .tag-data { background: rgba(108,140,255,0.15); color: var(--accent); }
+
+    code {
+      background: var(--surface-2);
+      padding: 0.15rem 0.4rem;
+      border-radius: 4px;
+      font-size: 0.85rem;
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    }
+
+    pre {
+      background: var(--surface-2);
+      padding: 1rem 1.25rem;
+      border-radius: 8px;
+      overflow-x: auto;
+      font-size: 0.85rem;
+      line-height: 1.5;
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+      margin: 0.75rem 0;
+    }
+
+    .score-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 2.5rem;
+      height: 2.5rem;
+      border-radius: 50%;
+      font-weight: 700;
+      font-size: 0.9rem;
+    }
+
+    .score-high { background: rgba(74,222,128,0.2); color: var(--green); }
+    .score-mid { background: rgba(251,191,36,0.2); color: var(--yellow); }
+    .score-low { background: rgba(248,113,113,0.2); color: var(--red); }
+
+    .flow-step {
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .flow-num {
+      flex-shrink: 0;
+      width: 2rem;
+      height: 2rem;
+      border-radius: 50%;
+      background: var(--accent);
+      color: var(--bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.85rem;
+    }
+
+    .flow-content { flex: 1; }
+    .flow-content strong { color: var(--accent); }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    @media (max-width: 768px) {
+      .grid-2 { grid-template-columns: 1fr; }
+      body { padding: 1rem; }
+    }
+
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 2rem 0;
+    }
+
+    .toc {
+      list-style: none;
+      padding: 0;
+    }
+
+    .toc li {
+      padding: 0.3rem 0;
+    }
+
+    .toc a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    .toc a:hover { text-decoration: underline; }
+
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .prompt-box {
+      background: var(--surface-2);
+      border: 1px solid var(--accent-dim);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      margin: 0.75rem 0;
+      font-size: 0.85rem;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    }
+
+    .meta-row {
+      display: flex;
+      gap: 2rem;
+      flex-wrap: wrap;
+      margin-bottom: 0.5rem;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .callout {
+      background: rgba(108,140,255,0.08);
+      border: 1px solid var(--accent-dim);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      margin: 1rem 0;
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Astro MCP Research Playbook</h1>
+  <p class="subtitle">App Idea Validation System for Anh @ LineCentury &mdash; Created 2026-05-14</p>
+
+  <div class="card card-highlight">
+    <strong>Purpose:</strong> A reusable system for validating mobile app ideas using Astro MCP (App Store keyword research tool). Designed for a solo indie dev who copies + improves proven markets, not reinvents them.<br><br>
+    <strong>Philosophy:</strong> Kill fast, dive deep on survivors. Domain experience + monetization potential > market size.
+  </div>
+
+  <!-- TABLE OF CONTENTS -->
+  <h2 id="toc">Table of Contents</h2>
+  <ul class="toc">
+    <li><a href="#problem">1. Problem Statement</a></li>
+    <li><a href="#solution">2. Solution</a></li>
+    <li><a href="#scoring">3. Scoring System</a></li>
+    <li><a href="#workflow">4. Astro MCP Workflow</a></li>
+    <li><a href="#tools">5. Astro MCP Tools Reference</a></li>
+    <li><a href="#prompts">6. Copy-Paste Prompts for AI</a></li>
+    <li><a href="#ideas">7. Current Idea Inventory</a></li>
+    <li><a href="#kill-criteria">8. Kill Criteria</a></li>
+    <li><a href="#decisions">9. Implementation Decisions</a></li>
+    <li><a href="#constraints">10. Constraints & Limitations</a></li>
+    <li><a href="#out-of-scope">11. Out of Scope</a></li>
+  </ul>
+
+  <!-- SECTION 1: PROBLEM -->
+  <h2 id="problem">1. Problem Statement</h2>
+  <div class="card">
+    <p>As a solo indie developer with <strong>107 validated app ideas</strong> but only 5-6 active products, the biggest bottleneck is not ideation &mdash; it's <strong>decision paralysis</strong>. Too many ideas survive too long without a kill signal, spreading execution thin across too many fronts.</p>
+    <p style="margin-top: 0.75rem;">Manual App Store research is slow (30-60 min per idea). Gut feel isn't reliable enough to kill ideas you're emotionally attached to. Data-backed scoring is needed to <strong>disqualify fast</strong> and <strong>commit with confidence</strong>.</p>
+  </div>
+
+  <!-- SECTION 2: SOLUTION -->
+  <h2 id="solution">2. Solution</h2>
+  <div class="card">
+    <p>A <strong>two-phase validation pipeline</strong> powered by Astro MCP:</p>
+    <div style="margin-top: 1rem;">
+      <div class="flow-step">
+        <div class="flow-num">1</div>
+        <div class="flow-content">
+          <strong>Phase 1: Kill Filter</strong> &mdash; Fast disqualification. Run Astro queries on all ideas. Score each. Kill anything below threshold. Goal: eliminate 60-80% of ideas in one session.
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-num">2</div>
+        <div class="flow-content">
+          <strong>Phase 2: Deep-Dive</strong> &mdash; Survivors get full competitive intel. Go/no-go scorecard per idea. Output: ranked table with top 3 breakdowns. Goal: commit to 1-2 ideas.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 3: SCORING -->
+  <h2 id="scoring">3. Scoring System</h2>
+
+  <h3>Weighted Scorecard</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>Dimension</th>
+        <th>Weight</th>
+        <th>Source</th>
+        <th>How to Score (0-100)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Monetization Signal</strong></td>
+        <td><span class="tag tag-go">3x</span></td>
+        <td>Astro: competitor pricing</td>
+        <td>
+          <strong>0</strong> = all competitors free, no IAP<br>
+          <strong>30</strong> = some have IAP but low prices ($0.99-1.99)<br>
+          <strong>60</strong> = multiple competitors charge $4.99+/yr subscription<br>
+          <strong>80</strong> = competitors earn $50K+/yr (visible in rankings)<br>
+          <strong>100</strong> = proven $1M+/yr market (I Am Sober, Strong, etc.)
+        </td>
+      </tr>
+      <tr>
+        <td><strong>Idea Complexity</strong></td>
+        <td><span class="tag tag-go">3x</span></td>
+        <td>Your judgment</td>
+        <td>
+          <strong>0</strong> = calculator / single-screen utility (KILL)<br>
+          <strong>30</strong> = simple tracker with 2-3 screens<br>
+          <strong>60</strong> = multi-feature app with retention loop<br>
+          <strong>80</strong> = app with data, history, insights, progression<br>
+          <strong>100</strong> = deep product with personalization, AI, community
+        </td>
+      </tr>
+      <tr>
+        <td><strong>Keyword Depth</strong></td>
+        <td><span class="tag tag-maybe">2x</span></td>
+        <td>Astro: keyword_suggestions</td>
+        <td>
+          <strong>0</strong> = 0-2 related keywords with Pop &gt; 10<br>
+          <strong>30</strong> = 3-5 keywords<br>
+          <strong>60</strong> = 6-12 keywords<br>
+          <strong>80</strong> = 13-25 keywords<br>
+          <strong>100</strong> = 25+ keywords with Pop &gt; 10
+        </td>
+      </tr>
+      <tr>
+        <td><strong>Market Demand</strong></td>
+        <td><span class="tag tag-data">1x</span></td>
+        <td>Astro: primary keyword Pop</td>
+        <td>
+          Direct Pop score from Astro (0-100)
+        </td>
+      </tr>
+      <tr>
+        <td><strong>Competition Difficulty</strong></td>
+        <td><span class="tag tag-data">1x</span></td>
+        <td>Astro: keyword Diff (inverted)</td>
+        <td>
+          Score = <code>100 - Diff</code>. High Diff = hard to rank = low score.
+        </td>
+      </tr>
+      <tr>
+        <td><strong>Domain Experience</strong></td>
+        <td><span class="tag tag-data">1x</span></td>
+        <td>Your judgment</td>
+        <td>
+          <strong>0</strong> = no experience, can't empathize (BINARY KILL)<br>
+          <strong>50</strong> = understand the category, not the specific pain<br>
+          <strong>100</strong> = lived this problem, feel the struggle daily
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Score Formula</h3>
+  <pre>Total = (Monetization x 3) + (Complexity x 3) + (Keyword Depth x 2) + Market Demand + Competition + Domain Experience
+Max possible = 300 + 300 + 200 + 100 + 100 + 100 = 1100
+
+Normalized = (Total / 1100) x 100   &rarr; final score out of 100</pre>
+
+  <h3>Decision Thresholds</h3>
+  <table>
+    <thead>
+      <tr><th>Score Range</th><th>Verdict</th><th>Action</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><span class="tag tag-go">70-100</span></td><td>Strong candidate</td><td>Deep-dive immediately</td></tr>
+      <tr><td><span class="tag tag-maybe">50-69</span></td><td>Conditional</td><td>Deep-dive only if &lt; 3 strong candidates</td></tr>
+      <tr><td><span class="tag tag-kill">0-49</span></td><td>Kill</td><td>Archive, don't revisit for 6 months</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout">
+    <strong>Binary Kills (instant disqualification regardless of score):</strong><br>
+    &bull; Domain Experience = 0 &rarr; KILL<br>
+    &bull; Idea Complexity = 0 &rarr; KILL (it's a calculator, not a product)<br>
+    &bull; Not a mobile app &rarr; KILL (current constraint)
+  </div>
+
+  <!-- SECTION 4: WORKFLOW -->
+  <h2 id="workflow">4. Astro MCP Workflow</h2>
+
+  <h3>Phase 1: Kill Filter (30 min for ~12 ideas)</h3>
+  <div class="card">
+    <div class="flow-step">
+      <div class="flow-num">1</div>
+      <div class="flow-content">
+        <strong>Pre-filter (YOU, 5 min)</strong><br>
+        Tag each idea: "I feel this pain" = yes/no. Kill all "no" immediately. Tag complexity: real product or calculator?
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-num">2</div>
+      <div class="flow-content">
+        <strong>Astro: Market scan (per surviving idea)</strong><br>
+        Run <code>live_app_store_search("[primary keyword]")</code> for each idea.<br>
+        Check: Do results exist? Are top apps charging money? How many results?
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-num">3</div>
+      <div class="flow-content">
+        <strong>Astro: Keyword depth check</strong><br>
+        Run <code>keyword_suggestions</code> for each idea's primary keyword.<br>
+        Count how many related keywords have Pop &gt; 10.
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-num">4</div>
+      <div class="flow-content">
+        <strong>Astro: Competitor monetization check</strong><br>
+        From search results, add top 3-5 competitors via <code>add_apps</code>.<br>
+        Check their pricing model, ratings, review sentiment.
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-num">5</div>
+      <div class="flow-content">
+        <strong>Score &amp; rank</strong><br>
+        Fill scorecard per idea. Sort by total score. Kill everything below 50.
+      </div>
+    </div>
+  </div>
+
+  <h3>Phase 2: Deep-Dive (1-2 hours for top 3)</h3>
+  <div class="card">
+    <div class="flow-step">
+      <div class="flow-num">1</div>
+      <div class="flow-content">
+        <strong>Astro: Full keyword map</strong><br>
+        Run <code>keyword_suggestions</code> + <code>extract_competitor_keywords</code> on top 5 competitors.<br>
+        Build tier list: GOLD (Pop &ge; 30, Diff &le; 35), SILVER, BRONZE.
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-num">2</div>
+      <div class="flow-content">
+        <strong>Astro: Competitive landscape</strong><br>
+        <code>get_ratings</code> for top 5 competitors across US + target regions.<br>
+        <code>fetch_keywords</code> to see what they rank for.<br>
+        <code>search_rankings</code> to map their positions.
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-num">3</div>
+      <div class="flow-content">
+        <strong>Gap analysis</strong><br>
+        Cross-reference competitor keywords with their ratings.<br>
+        Identify: keywords they rank for but have bad reviews = your entry point.
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-num">4</div>
+      <div class="flow-content">
+        <strong>Output: Go/No-Go scorecard</strong><br>
+        One-page summary per idea with final verdict and recommended ASO keywords for launch.
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 5: TOOLS REFERENCE -->
+  <h2 id="tools">5. Astro MCP Tools Reference</h2>
+  <table>
+    <thead>
+      <tr><th>Tool</th><th>Use For</th><th>Phase</th><th>Rate Limit Note</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>live_app_store_search</code></td><td>Find competitors, check market exists</td><td>Phase 1</td><td>1 call per idea</td></tr>
+      <tr><td><code>keyword_suggestions</code></td><td>Discover related keywords, measure depth</td><td>Phase 1 + 2</td><td>1 call per idea (Phase 1), 3-5 per idea (Phase 2)</td></tr>
+      <tr><td><code>add_apps</code></td><td>Register competitors for tracking</td><td>Phase 1</td><td>Batch up to 5 per call</td></tr>
+      <tr><td><code>get_ratings</code></td><td>Competitor star ratings + review sentiment</td><td>Phase 2</td><td>1 per competitor</td></tr>
+      <tr><td><code>extract_competitor_keywords</code></td><td>NLP-mine hidden keywords from competitors</td><td>Phase 2</td><td>1 per competitor (heavy)</td></tr>
+      <tr><td><code>fetch_keywords</code></td><td>Get tracked keyword data for an app</td><td>Phase 2</td><td>Batch up to 100 keywords</td></tr>
+      <tr><td><code>search_rankings</code></td><td>Check ranking positions</td><td>Phase 2</td><td>1 per keyword</td></tr>
+      <tr><td><code>add_keywords</code></td><td>Track new keywords for your app</td><td>Post-decision</td><td>Batch up to 100</td></tr>
+      <tr><td><code>list_apps</code></td><td>See all tracked apps</td><td>Any</td><td>Lightweight</td></tr>
+      <tr><td><code>set_notes</code></td><td>Annotate apps with findings</td><td>Any</td><td>Lightweight</td></tr>
+      <tr><td><code>assign_tags</code></td><td>Organize apps by category</td><td>Any</td><td>Lightweight</td></tr>
+      <tr><td><code>manage_tag_collections</code></td><td>Create tag groups</td><td>Setup</td><td>Lightweight</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout">
+    <strong>Rate limit:</strong> 60 requests/min. Phase 1 for 10 ideas &asymp; 30-40 requests. Phase 2 for 3 ideas &asymp; 45-60 requests. Don't run both phases back-to-back without a 1-min buffer.
+  </div>
+
+  <!-- SECTION 6: PROMPTS -->
+  <h2 id="prompts">6. Copy-Paste Prompts for AI</h2>
+
+  <h3>Prompt 1: Phase 1 Kill Filter</h3>
+  <div class="prompt-box">I want to validate mobile app ideas using Astro MCP. Run Phase 1 (Kill Filter) on these ideas:
+
+[LIST YOUR IDEAS HERE, one per line, with primary keyword]
+
+For each idea:
+1. Run `live_app_store_search` with the primary keyword
+2. Run `keyword_suggestions` for keyword depth
+3. Check top 3 competitors: are they charging? what price?
+4. Score using this weighted system:
+   - Monetization (3x): 0-100 based on competitor pricing
+   - Keyword Depth (2x): count of related keywords with Pop > 10
+   - Market Demand (1x): primary keyword Pop score
+   - Competition (1x): 100 - Diff score
+
+I will manually add:
+   - Idea Complexity (3x): my judgment
+   - Domain Experience (1x): my judgment
+
+Output: markdown table ranked by total score. Include raw data for each dimension.
+Kill anything where no competitors charge money OR keyword depth < 3.</div>
+
+  <h3>Prompt 2: Phase 2 Deep-Dive</h3>
+  <div class="prompt-box">Deep-dive on this app idea using Astro MCP: [IDEA NAME + PRIMARY KEYWORD]
+
+1. Add top 5 competitors via `add_apps`
+2. Run `extract_competitor_keywords` on each (NLP extraction)
+3. Run `get_ratings` for US + [TARGET REGION]
+4. Run `keyword_suggestions` for 3 related seed keywords
+5. Build keyword tier list: GOLD (Pop >= 30, Diff <= 35), SILVER, BRONZE
+
+Output a Go/No-Go scorecard:
+- Market size signal (keyword volume)
+- Competition beatable? (gaps in ratings, missing features)
+- Monetization proven? (what competitors charge)
+- Top 10 launch keywords (GOLD + SILVER)
+- Biggest risk
+- Final verdict: GO / CONDITIONAL / KILL</div>
+
+  <h3>Prompt 3: Quarterly Competitive Check (Post-Launch)</h3>
+  <div class="prompt-box">Run quarterly competitive check for my app: [APP NAME]
+
+1. `fetch_keywords` for my tracked keywords — any ranking changes?
+2. `extract_competitor_keywords` on top 3 competitors — new keywords they're targeting?
+3. `get_ratings` — competitor rating trends (improving or declining?)
+4. `keyword_suggestions` — any new keyword opportunities?
+
+Output: what changed, what to optimize, any new threats.</div>
+
+  <!-- SECTION 7: IDEAS -->
+  <h2 id="ideas">7. Current Idea Inventory</h2>
+  <p style="color: var(--text-muted); margin-bottom: 1rem;">Source: <code>brainstorming-app-ideas-small/</code> folder. Research docs + prototypes already exist for several.</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Idea</th>
+        <th>Category</th>
+        <th>Primary Keyword</th>
+        <th>Has PRD?</th>
+        <th>Has Prototype?</th>
+        <th>Pre-Filter Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>PanicFree</strong></td>
+        <td>Mental Health</td>
+        <td>panic attack tracker</td>
+        <td>Yes</td>
+        <td>No</td>
+        <td><span class="tag tag-go">DOMAIN FIT</span></td>
+      </tr>
+      <tr>
+        <td><strong>CleanStreak</strong></td>
+        <td>Health</td>
+        <td>junk food tracker</td>
+        <td>Yes</td>
+        <td>Yes (RN)</td>
+        <td><span class="tag tag-go">DOMAIN FIT</span></td>
+      </tr>
+      <tr>
+        <td><strong>DebtZero / Debt Crusher</strong></td>
+        <td>Finance</td>
+        <td>debt payoff tracker</td>
+        <td>Yes</td>
+        <td>Yes (Expo)</td>
+        <td><span class="tag tag-maybe">NEEDS ASTRO</span></td>
+      </tr>
+      <tr>
+        <td><strong>Gen Z Finance Learning</strong></td>
+        <td>Education</td>
+        <td>personal finance app</td>
+        <td>Yes (market analysis)</td>
+        <td>No</td>
+        <td><span class="tag tag-go">DOMAIN FIT</span></td>
+      </tr>
+      <tr>
+        <td><strong>CareerKit</strong></td>
+        <td>Career</td>
+        <td>cover letter generator</td>
+        <td>Partial</td>
+        <td>No</td>
+        <td><span class="tag tag-maybe">NEEDS ASTRO</span></td>
+      </tr>
+      <tr>
+        <td><strong>MatricPrep</strong></td>
+        <td>Education</td>
+        <td>matric exam prep</td>
+        <td>Yes</td>
+        <td>Yes (RN)</td>
+        <td><span class="tag tag-maybe">NEEDS ASTRO</span> (exam prep domain fits)</td>
+      </tr>
+      <tr>
+        <td><strong>Invoice Maker</strong></td>
+        <td>Business</td>
+        <td>invoice maker</td>
+        <td>ASO research only</td>
+        <td>No</td>
+        <td><span class="tag tag-maybe">NEEDS ASTRO</span></td>
+      </tr>
+      <tr>
+        <td><strong>Global Exam Prep</strong></td>
+        <td>Education</td>
+        <td>exam prep [country]</td>
+        <td>Market research</td>
+        <td>No</td>
+        <td><span class="tag tag-maybe">NEEDS ASTRO</span> (exam prep domain fits)</td>
+      </tr>
+      <tr>
+        <td><strong>PetScan</strong></td>
+        <td>Lifestyle</td>
+        <td>dog breed identifier</td>
+        <td>Partial</td>
+        <td>No</td>
+        <td><span class="tag tag-kill">NO DOMAIN</span> (unless you own pets)</td>
+      </tr>
+      <tr>
+        <td><strong>UAE Expat Toolkit</strong></td>
+        <td>Finance</td>
+        <td>uae gratuity calculator</td>
+        <td>Yes</td>
+        <td>Yes (Expo)</td>
+        <td><span class="tag tag-kill">TOO SIMPLE</span></td>
+      </tr>
+      <tr>
+        <td><strong>Gold Price Tracker</strong></td>
+        <td>Finance</td>
+        <td>gold price uae</td>
+        <td>ASO research</td>
+        <td>No</td>
+        <td><span class="tag tag-kill">TOO SIMPLE</span></td>
+      </tr>
+      <tr>
+        <td><strong>Halal Scanner</strong></td>
+        <td>Lifestyle</td>
+        <td>halal scanner</td>
+        <td>ASO research</td>
+        <td>No</td>
+        <td><span class="tag tag-kill">NO DOMAIN</span></td>
+      </tr>
+      <tr>
+        <td><strong>Tasbeeh Counter</strong></td>
+        <td>Religious</td>
+        <td>tasbeeh counter</td>
+        <td>ASO research</td>
+        <td>No</td>
+        <td><span class="tag tag-kill">TOO SIMPLE</span></td>
+      </tr>
+      <tr>
+        <td><strong>Ramadan Tracker</strong></td>
+        <td>Religious</td>
+        <td>ramadan tracker</td>
+        <td>ASO research</td>
+        <td>No</td>
+        <td><span class="tag tag-kill">NO DOMAIN</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="callout">
+    <strong>Pre-filter result:</strong> 5 killed (too simple or no domain), 4 need Astro data, 3 strong domain fit. Run Astro on the 7 surviving ideas.
+  </div>
+
+  <!-- SECTION 8: KILL CRITERIA -->
+  <h2 id="kill-criteria">8. Kill Criteria</h2>
+
+  <div class="grid-2">
+    <div class="card card-kill">
+      <h3 style="color: var(--red);">Hard Kill: No Domain Experience</h3>
+      <p>"I don't have the struggle." Can't empathize with core user pain. No amount of market data fixes this.</p>
+      <p style="margin-top: 0.5rem;"><strong>Examples killed:</strong> PetScan (no pets), Halal Scanner (not Muslim), Ramadan Tracker (not Muslim)</p>
+    </div>
+    <div class="card card-kill">
+      <h3 style="color: var(--red);">Hard Kill: Too Simple to Monetize</h3>
+      <p>"It's a calculator, not a product." Users won't pay because it's a Google search or a single formula. No retention loop, no depth.</p>
+      <p style="margin-top: 0.5rem;"><strong>Examples killed:</strong> UAE Gratuity Calculator, Gold Price Tracker, Tasbeeh Counter</p>
+    </div>
+  </div>
+
+  <div class="card card-warn">
+    <h3 style="color: var(--yellow);">Soft Kill: Low Astro Scores</h3>
+    <p>Fails data validation even though domain + complexity are fine:</p>
+    <ul style="margin-top: 0.5rem; padding-left: 1.25rem;">
+      <li>No competitors charge money (monetization signal = 0)</li>
+      <li>Keyword depth &lt; 3 related keywords with Pop &gt; 10</li>
+      <li>Primary keyword Pop &lt; 5 with no adjacent opportunity</li>
+      <li>Total weighted score &lt; 50</li>
+    </ul>
+  </div>
+
+  <!-- SECTION 9: IMPLEMENTATION DECISIONS -->
+  <h2 id="decisions">9. Implementation Decisions</h2>
+
+  <div class="card">
+    <h3>Strategy: Copy + Improve</h3>
+    <p>Not trying to build unique/novel apps. Find proven markets where competitors make money, copy the model, improve the UX. This means:</p>
+    <ul style="padding-left: 1.25rem; margin-top: 0.5rem;">
+      <li>Monetization signal is the #1 weighted factor (3x) &mdash; if nobody pays, skip it</li>
+      <li>Competition difficulty is low weight (1x) &mdash; crowded is fine if they're beatable</li>
+      <li>"Beatable" = competitors rated 3.5-4.2 stars with common complaints you can solve</li>
+      <li>Don't need to be #1 &mdash; need to capture a profitable slice</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h3>Tech Stack (Fixed)</h3>
+    <p>All ideas will be built with the same proven stack:</p>
+    <ul style="padding-left: 1.25rem; margin-top: 0.5rem;">
+      <li><strong>Mobile:</strong> React Native / Expo</li>
+      <li><strong>Backend:</strong> Supabase (PostgreSQL + Edge Functions)</li>
+      <li><strong>Monetization:</strong> RevenueCat (subscriptions + IAP)</li>
+      <li><strong>Analytics:</strong> Amplitude (events + experiments + remote config)</li>
+      <li><strong>ASO:</strong> Astro (keyword tracking + competitive intel)</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h3>Output Format: Ranked Markdown Table</h3>
+    <p>After Astro analysis, results saved as a scored table in the brainstorming folder. One file per research session. Sortable by total score. Top 3 get expanded deep-dive sections below the table.</p>
+  </div>
+
+  <div class="card">
+    <h3>Astro MCP Configuration</h3>
+    <pre>// Claude Code MCP setup
+// Astro app must be running on macOS
+// Server: http://localhost:8089
+// Rate limit: 60 req/min
+// Batch keywords: up to 100 per call</pre>
+  </div>
+
+  <!-- SECTION 10: CONSTRAINTS -->
+  <h2 id="constraints">10. Constraints & Limitations</h2>
+
+  <table>
+    <thead>
+      <tr><th>Constraint</th><th>Impact</th><th>Mitigation</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>iOS App Store only</td>
+        <td>No Android market data</td>
+        <td>Acceptable &mdash; iOS first, Android later. iOS users pay more.</td>
+      </tr>
+      <tr>
+        <td>60 req/min rate limit</td>
+        <td>Can't bulk-analyze 100+ ideas in one session</td>
+        <td>Pre-filter manually first. Batch operations. Phase work across sessions.</td>
+      </tr>
+      <tr>
+        <td>Requires Astro macOS app running</td>
+        <td>Not a cloud API, needs local machine</td>
+        <td>Run during dedicated research sessions, not ad-hoc.</td>
+      </tr>
+      <tr>
+        <td>Beta status</td>
+        <td>Data may be inaccurate, API may break</td>
+        <td>Cross-verify critical findings against App Store directly.</td>
+      </tr>
+      <tr>
+        <td>Mobile apps only (no games)</td>
+        <td>Self-imposed scope constraint</td>
+        <td>Focus enables faster execution.</td>
+      </tr>
+      <tr>
+        <td>Token consumption</td>
+        <td>MCP calls cost Claude tokens</td>
+        <td>Batch operations, cache results, don't repeat queries.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- SECTION 11: OUT OF SCOPE -->
+  <h2 id="out-of-scope">11. Out of Scope</h2>
+
+  <div class="card">
+    <ul style="padding-left: 1.25rem;">
+      <li><strong>Android market research</strong> &mdash; Astro is iOS/App Store only</li>
+      <li><strong>Game ideas</strong> &mdash; user constraint, mobile apps only</li>
+      <li><strong>Web/SaaS ideas</strong> &mdash; not in Astro's scope</li>
+      <li><strong>Automated idea generation</strong> &mdash; user already has 107 ideas, problem is selection not creation</li>
+      <li><strong>User interviews / qualitative research</strong> &mdash; known weakness but not addressed by this tool</li>
+      <li><strong>Post-launch ASO optimization</strong> &mdash; covered by Astro but not in this validation playbook scope</li>
+      <li><strong>Revenue projections</strong> &mdash; existing PRDs already have these; Astro validates market, not financial models</li>
+    </ul>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="card" style="text-align: center; color: var(--text-muted);">
+    <p><strong>Astro MCP Research Playbook v1.0</strong></p>
+    <p>Created: 2026-05-14 &bull; Author: Anh @ LineCentury</p>
+    <p>Source: Grill session with Claude &bull; Astro MCP docs: <a href="https://tryastro.app/docs/mcp/">tryastro.app/docs/mcp</a></p>
+    <p style="margin-top: 0.75rem;">Next action: Open this file, run Phase 1 Kill Filter prompt with surviving 7 ideas.</p>
+  </div>
+
+</body>
+</html>

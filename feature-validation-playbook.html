@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Feature Validation Playbook — 5-Step Gate for New App Features</title>
+  <style>
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --surface-2: #242836;
+      --border: #2e3348;
+      --text: #e4e6ef;
+      --text-muted: #8b90a5;
+      --accent: #6c8cff;
+      --accent-dim: #4a6ad9;
+      --green: #4ade80;
+      --red: #f87171;
+      --yellow: #fbbf24;
+      --orange: #fb923c;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      padding: 2rem;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    h1 { font-size: 2rem; font-weight: 700; margin-bottom: 0.25rem; color: var(--accent); }
+    h2 { font-size: 1.4rem; font-weight: 600; margin: 2.5rem 0 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+    h3 { font-size: 1.1rem; font-weight: 600; margin: 1.5rem 0 0.75rem; color: var(--accent); }
+    .subtitle { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 2rem; }
+
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.25rem; }
+    .card-kill { border-left: 3px solid var(--red); }
+    .card-warn { border-left: 3px solid var(--yellow); }
+    .card-go { border-left: 3px solid var(--green); }
+    .card-highlight { border-left: 3px solid var(--accent); }
+
+    table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+    th { background: var(--surface-2); color: var(--accent); font-weight: 600; text-align: left; padding: 0.75rem 1rem; border-bottom: 2px solid var(--border); }
+    td { padding: 0.65rem 1rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+    tr:hover td { background: var(--surface-2); }
+
+    .tag { display: inline-block; padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+    .tag-kill { background: rgba(248,113,113,0.15); color: var(--red); }
+    .tag-warn { background: rgba(251,191,36,0.15); color: var(--yellow); }
+    .tag-go { background: rgba(74,222,128,0.15); color: var(--green); }
+    .tag-info { background: rgba(108,140,255,0.15); color: var(--accent); }
+
+    .flow-step { display: flex; align-items: flex-start; gap: 1rem; margin-bottom: 1rem; }
+    .flow-num { flex-shrink: 0; width: 2rem; height: 2rem; border-radius: 50%; background: var(--accent); color: var(--bg); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem; }
+    .flow-num-kill { background: var(--red); }
+    .flow-num-warn { background: var(--yellow); color: var(--bg); }
+    .flow-content { flex: 1; }
+    .flow-content strong { color: var(--accent); }
+
+    .prompt-box { background: var(--surface-2); border: 1px solid var(--accent-dim); border-radius: 8px; padding: 1rem 1.25rem; margin: 0.75rem 0; font-size: 0.85rem; line-height: 1.5; white-space: pre-wrap; font-family: 'JetBrains Mono', 'Fira Code', monospace; }
+    .verdict-box { text-align: center; padding: 2rem; font-size: 1.3rem; font-weight: 700; border-radius: 12px; margin: 1.5rem 0; }
+    .verdict-build { background: rgba(74,222,128,0.1); border: 2px solid var(--green); color: var(--green); }
+    .verdict-reshape { background: rgba(251,191,36,0.1); border: 2px solid var(--yellow); color: var(--yellow); }
+    .verdict-kill { background: rgba(248,113,113,0.1); border: 2px solid var(--red); color: var(--red); }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    @media (max-width: 768px) { .grid-2 { grid-template-columns: 1fr; } body { padding: 1rem; } }
+
+    .divider { height: 1px; background: var(--border); margin: 2rem 0; }
+    code { background: var(--surface-2); padding: 0.15rem 0.4rem; border-radius: 4px; font-size: 0.85rem; font-family: 'JetBrains Mono', 'Fira Code', monospace; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    ul, ol { margin: 0.5rem 0 0.5rem 1.25rem; }
+    li { margin-bottom: 0.3rem; }
+  </style>
+</head>
+<body>
+
+  <h1>Feature Validation Playbook</h1>
+  <p class="subtitle">5-step gate to validate any new app feature idea before building. Run each step sequentially. Steps 1-2 are hard kill gates — fail = kill the idea. Steps 3-5 are soft gates — fail = reshape, not kill.</p>
+
+  <!-- ============================================ -->
+  <!-- HOW TO USE -->
+  <!-- ============================================ -->
+  <h2>How to Use This Playbook</h2>
+
+  <div class="card card-highlight">
+    <p><strong>Input:</strong> One feature idea (name + rough description)</p>
+    <p><strong>Process:</strong> Walk through Steps 1→5 sequentially. Fill each section. Apply kill/reshape criteria at each gate.</p>
+    <p><strong>Output:</strong> Filled template with per-step verdict + final decision: <span class="tag tag-go">BUILD</span> or <span class="tag tag-warn">RESHAPE</span> or <span class="tag tag-kill">KILL</span></p>
+  </div>
+
+  <div class="prompt-box">AI INSTRUCTION: When user provides a feature idea, walk through all 5 steps below.
+Fill each section with concrete answers. Apply gate criteria strictly.
+Output a completed template with verdict per step and final decision at bottom.
+Be concise. Sacrifice grammar for clarity. No filler.</div>
+
+  <!-- ============================================ -->
+  <!-- OVERVIEW TABLE -->
+  <!-- ============================================ -->
+  <h2>Validation Overview</h2>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Step</th>
+        <th>Name</th>
+        <th>Gate Type</th>
+        <th>Kill Criteria</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>1</td>
+        <td>Core Value</td>
+        <td><span class="tag tag-kill">HARD KILL</span></td>
+        <td>Can't state value in one sentence → kill idea</td>
+      </tr>
+      <tr>
+        <td>2</td>
+        <td>Core Loop</td>
+        <td><span class="tag tag-kill">HARD KILL</span></td>
+        <td>Can't name action → immediate reward → kill idea</td>
+      </tr>
+      <tr>
+        <td>3</td>
+        <td>Accessory Features</td>
+        <td><span class="tag tag-warn">SOFT — RESHAPE</span></td>
+        <td>Remove accessory, loop still works → cut it</td>
+      </tr>
+      <tr>
+        <td>4</td>
+        <td>Surface Area Check</td>
+        <td><span class="tag tag-warn">SOFT — RESHAPE</span></td>
+        <td>Exceeds 5-7 screens or 3 elements/screen → simplify</td>
+      </tr>
+      <tr>
+        <td>5</td>
+        <td>Retention Hook</td>
+        <td><span class="tag tag-warn">SOFT — RESHAPE</span></td>
+        <td>Can't name specific mechanism → redesign</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="divider"></div>
+
+  <!-- ============================================ -->
+  <!-- STEP 1 -->
+  <!-- ============================================ -->
+  <h2>Step 1: Core Value <span class="tag tag-kill">HARD KILL</span></h2>
+
+  <div class="card card-kill">
+    <h3>The Rule</h3>
+    <p>Define the core value of this feature in <strong>one sentence</strong>. One feature at a time. If you can't — the idea is too vague or too broad. Kill it.</p>
+
+    <h3>Gate Question</h3>
+    <p><em>"What single problem does this feature solve, and for whom?"</em></p>
+
+    <h3>Pass Criteria</h3>
+    <ul>
+      <li>One sentence, no conjunctions ("and", "also", "plus")</li>
+      <li>Names a specific user pain or desire</li>
+      <li>A stranger could read it and understand</li>
+    </ul>
+
+    <h3>Examples</h3>
+    <div class="grid-2">
+      <div class="card card-go">
+        <strong>PASS</strong><br>
+        "Users forget to drink water throughout the day — this feature reminds them and tracks intake."<br><br>
+        "Debt holders can't see which debt to pay first — this ranks debts by cost-saving impact."
+      </div>
+      <div class="card card-kill">
+        <strong>FAIL</strong><br>
+        "A comprehensive health dashboard with hydration, sleep, exercise, and nutrition tracking."<br>
+        → Too many things. Which ONE?<br><br>
+        "Make the app better and more engaging."<br>
+        → No specific problem named.
+      </div>
+    </div>
+  </div>
+
+  <div class="prompt-box">AI TEMPLATE — Step 1:
+Feature name: ___
+Core value (one sentence): ___
+Target user: ___
+Verdict: PASS / KILL
+Reason: ___</div>
+
+  <!-- ============================================ -->
+  <!-- STEP 2 -->
+  <!-- ============================================ -->
+  <h2>Step 2: Core Loop <span class="tag tag-kill">HARD KILL</span></h2>
+
+  <div class="card card-kill">
+    <h3>The Rule</h3>
+    <p>Map <strong>Action → Immediate Reward</strong>. The reward must happen in the <strong>same session</strong>, within seconds of the action. If the reward is delayed (next day, end of week, after 30 entries) — the loop won't drive daily usage. Kill it.</p>
+
+    <h3>Gate Questions</h3>
+    <ul>
+      <li><em>"What does the user DO?"</em> (the action — must be a specific tap/input)</li>
+      <li><em>"What do they GET back immediately?"</em> (the reward — must be visible/felt within seconds)</li>
+      <li><em>"What type of reward?"</em> (categorize it)</li>
+    </ul>
+
+    <h3>Reward Types</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Definition</th>
+          <th>Example</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="tag tag-info">Intrinsic</span></td>
+          <td>User feels progress, relief, or satisfaction</td>
+          <td>Log payment → debt bar shrinks visually</td>
+        </tr>
+        <tr>
+          <td><span class="tag tag-info">Data</span></td>
+          <td>User gets insight they didn't have before</td>
+          <td>Input expense → "you're 20% under budget"</td>
+        </tr>
+        <tr>
+          <td><span class="tag tag-info">Social</span></td>
+          <td>Recognition from others</td>
+          <td>Complete challenge → badge visible to friends</td>
+        </tr>
+        <tr>
+          <td><span class="tag tag-info">Unlockable</span></td>
+          <td>Access to something new</td>
+          <td>Finish lesson → next level unlocks</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>Examples</h3>
+    <div class="grid-2">
+      <div class="card card-go">
+        <strong>PASS</strong><br>
+        Action: Tap "drank water"<br>
+        Reward: Hydration bar fills up instantly (intrinsic)<br>
+        Delay: 0 seconds<br><br>
+        Action: Log a debt payment<br>
+        Reward: Debt-free date moves closer, shown immediately (data + intrinsic)<br>
+        Delay: 0 seconds
+      </div>
+      <div class="card card-kill">
+        <strong>FAIL</strong><br>
+        Action: Input daily expenses<br>
+        Reward: Monthly spending report<br>
+        Delay: 30 days → dead loop<br><br>
+        Action: Complete onboarding quiz<br>
+        Reward: "We'll send personalized tips via email"<br>
+        Delay: hours/days → no immediate payoff
+      </div>
+    </div>
+  </div>
+
+  <div class="prompt-box">AI TEMPLATE — Step 2:
+Action (what user does): ___
+Reward (what user gets immediately): ___
+Reward type: Intrinsic / Data / Social / Unlockable
+Time to reward: ___ seconds
+Verdict: PASS / KILL
+Reason: ___</div>
+
+  <!-- ============================================ -->
+  <!-- STEP 3 -->
+  <!-- ============================================ -->
+  <h2>Step 3: Accessory Features <span class="tag tag-warn">SOFT — RESHAPE</span></h2>
+
+  <div class="card card-warn">
+    <h3>The Rule</h3>
+    <p>Add <strong>only what supports the core loop</strong>. For every proposed accessory, apply the litmus test:</p>
+
+    <div class="prompt-box">"If I remove this accessory, does the core loop BREAK?"
+→ Yes, it breaks → KEEP (load-bearing)
+→ No, loop still works → CUT for v1 (decorative)</div>
+
+    <h3>Common Traps</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Accessory</th>
+          <th>Feels Like</th>
+          <th>Actually Is</th>
+          <th>Verdict</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Push reminders to trigger action</td>
+          <td>Nice to have</td>
+          <td>Drives the loop — triggers action</td>
+          <td><span class="tag tag-go">KEEP</span></td>
+        </tr>
+        <tr>
+          <td>Share stats to social media</td>
+          <td>Supports engagement</td>
+          <td>Vanity feature, loop works without it</td>
+          <td><span class="tag tag-kill">CUT</span></td>
+        </tr>
+        <tr>
+          <td>Track a second related metric</td>
+          <td>Natural extension</td>
+          <td>Second core loop disguised as accessory</td>
+          <td><span class="tag tag-kill">CUT</span></td>
+        </tr>
+        <tr>
+          <td>History/log of past actions</td>
+          <td>Basic feature</td>
+          <td>Reinforces reward visibility</td>
+          <td><span class="tag tag-go">KEEP</span></td>
+        </tr>
+        <tr>
+          <td>Customizable themes/colors</td>
+          <td>Polish</td>
+          <td>Zero loop impact</td>
+          <td><span class="tag tag-kill">CUT</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="prompt-box">AI TEMPLATE — Step 3:
+List each proposed accessory:
+
+1. Accessory: ___
+   Remove it → loop breaks? YES / NO
+   Verdict: KEEP / CUT
+
+2. Accessory: ___
+   Remove it → loop breaks? YES / NO
+   Verdict: KEEP / CUT
+
+3. Accessory: ___
+   Remove it → loop breaks? YES / NO
+   Verdict: KEEP / CUT
+
+Total accessories kept: ___
+Warning if > 3 kept: loop may be weak, reconsider Step 2</div>
+
+  <!-- ============================================ -->
+  <!-- STEP 4 -->
+  <!-- ============================================ -->
+  <h2>Step 4: Surface Area Check <span class="tag tag-warn">SOFT — RESHAPE</span></h2>
+
+  <div class="card card-warn">
+    <h3>The Rule</h3>
+    <p>The entire feature (core loop + kept accessories) must fit within:</p>
+    <ul>
+      <li><strong>5-7 new screens maximum</strong></li>
+      <li><strong>Max 3 new interactive elements per screen</strong> (buttons, inputs, toggles, pickers)</li>
+    </ul>
+    <p>If it exceeds either limit → too complex. Split the feature or cut accessories.</p>
+
+    <h3>Screen Budget Reference</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Feature Shape</th>
+          <th>Typical Screens</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Simple CRUD (add/edit/delete/list)</td>
+          <td>3-4</td>
+        </tr>
+        <tr>
+          <td>Onboarding wizard</td>
+          <td>3-5</td>
+        </tr>
+        <tr>
+          <td>Dashboard + drill-down detail</td>
+          <td>2-3</td>
+        </tr>
+        <tr>
+          <td>Settings/config page</td>
+          <td>1-2</td>
+        </tr>
+        <tr>
+          <td>Payment/subscription flow</td>
+          <td>2-3</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>Complexity Signals</h3>
+    <div class="grid-2">
+      <div class="card card-go">
+        <strong>Under budget</strong><br>
+        5 screens, 2 elements each = 10 total interactions<br>
+        Clean, focused, buildable in days
+      </div>
+      <div class="card card-kill">
+        <strong>Over budget</strong><br>
+        9 screens, 5 elements each = 45 total interactions<br>
+        Scope creep territory, split into phases
+      </div>
+    </div>
+  </div>
+
+  <div class="prompt-box">AI TEMPLATE — Step 4:
+Screen inventory:
+1. Screen: ___ | New elements: ___ (list them)
+2. Screen: ___ | New elements: ___ (list them)
+3. Screen: ___ | New elements: ___ (list them)
+...
+
+Total screens: ___  (cap: 7)
+Max elements on any screen: ___ (cap: 3)
+Verdict: PASS / RESHAPE
+If reshape needed: what to cut ___</div>
+
+  <!-- ============================================ -->
+  <!-- STEP 5 -->
+  <!-- ============================================ -->
+  <h2>Step 5: Retention Hook <span class="tag tag-warn">SOFT — RESHAPE</span></h2>
+
+  <div class="card card-warn">
+    <h3>The Rule</h3>
+    <p>Name the <strong>specific mechanism</strong> that pulls users back to the app. Must be concrete, not "good UX" or "push notifications." Pick from known patterns:</p>
+
+    <h3>Retention Mechanisms</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Mechanism</th>
+          <th>How It Works</th>
+          <th>Example</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="tag tag-info">Unfinished State</span></td>
+          <td>Progress bar incomplete, streak alive, goal partially done — user feels pull to complete</td>
+          <td>Duolingo streak, 70% hydration bar, "3/5 debts paid off"</td>
+        </tr>
+        <tr>
+          <td><span class="tag tag-info">Scheduled Reward</span></td>
+          <td>Something valuable appears at a known future time — user returns to claim it</td>
+          <td>"Daily insight unlocks at 9am", "Weekly debt report ready Monday"</td>
+        </tr>
+        <tr>
+          <td><span class="tag tag-info">Decaying Value</span></td>
+          <td>Data or progress degrades if not maintained — user returns to keep it fresh</td>
+          <td>Habit tracker marks "missed" days, streak resets, "last logged 3 days ago" warning</td>
+        </tr>
+        <tr>
+          <td><span class="tag tag-info">External Trigger</span></td>
+          <td>Real-world event triggers app relevance — notification ties to user's actual life</td>
+          <td>"Bill due in 2 days", "It's 2pm — you haven't logged water since 10am"</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>Gate Question</h3>
+    <p><em>"Why would the user open this app again tomorrow — specifically because of this feature?"</em></p>
+    <p>If the answer is vague ("because it's useful") → no hook. Redesign.</p>
+  </div>
+
+  <div class="prompt-box">AI TEMPLATE — Step 5:
+Retention mechanism type: Unfinished State / Scheduled Reward / Decaying Value / External Trigger
+Specific implementation: ___
+Why user returns tomorrow: ___
+Verdict: PASS / RESHAPE
+If reshape needed: proposed hook ___</div>
+
+  <div class="divider"></div>
+
+  <!-- ============================================ -->
+  <!-- FINAL VERDICT -->
+  <!-- ============================================ -->
+  <h2>Final Verdict</h2>
+
+  <div class="card card-highlight">
+    <h3>Decision Rules</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Scenario</th>
+          <th>Verdict</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Steps 1-2 PASS + Steps 3-5 PASS</td>
+          <td><span class="tag tag-go">BUILD</span> — proceed to implementation</td>
+        </tr>
+        <tr>
+          <td>Steps 1-2 PASS + any of Steps 3-5 need work</td>
+          <td><span class="tag tag-warn">RESHAPE</span> — core idea valid, adjust scope/hooks/surface</td>
+        </tr>
+        <tr>
+          <td>Step 1 or Step 2 FAIL</td>
+          <td><span class="tag tag-kill">KILL</span> — idea fundamentally broken, don't build</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="prompt-box">AI TEMPLATE — Final Verdict:
+
+Feature: ___
+
+Step 1 — Core Value:     PASS / KILL    | ___
+Step 2 — Core Loop:      PASS / KILL    | ___
+Step 3 — Accessories:    PASS / RESHAPE | ___ kept, ___ cut
+Step 4 — Surface Area:   PASS / RESHAPE | ___ screens, max ___ elements
+Step 5 — Retention Hook: PASS / RESHAPE | mechanism: ___
+
+═══════════════════════════════════════
+FINAL VERDICT:  BUILD / RESHAPE / KILL
+═══════════════════════════════════════
+Notes: ___</div>
+
+  <div class="divider"></div>
+
+  <!-- ============================================ -->
+  <!-- WORKED EXAMPLE -->
+  <!-- ============================================ -->
+  <h2>Worked Example: Water Tracker — "Hydration Reminder"</h2>
+
+  <div class="card">
+    <h3>Step 1 — Core Value <span class="tag tag-go">PASS</span></h3>
+    <p><strong>Feature:</strong> Hydration Reminder</p>
+    <p><strong>Core value:</strong> Users forget to drink water throughout the day — this tracks intake and shows progress visually.</p>
+    <p><strong>Target user:</strong> Health-conscious adults who sit at desks all day.</p>
+  </div>
+
+  <div class="card">
+    <h3>Step 2 — Core Loop <span class="tag tag-go">PASS</span></h3>
+    <p><strong>Action:</strong> Tap "drank water" button</p>
+    <p><strong>Reward:</strong> Hydration bar fills up instantly with satisfying animation</p>
+    <p><strong>Reward type:</strong> Intrinsic (visual progress)</p>
+    <p><strong>Time to reward:</strong> &lt;1 second</p>
+  </div>
+
+  <div class="card">
+    <h3>Step 3 — Accessories <span class="tag tag-go">PASS</span></h3>
+    <table>
+      <tbody>
+        <tr><td>Reminder notifications</td><td>Remove → users forget to log → loop dies</td><td><span class="tag tag-go">KEEP</span></td></tr>
+        <tr><td>History log</td><td>Remove → no visible streak → reward weakens</td><td><span class="tag tag-go">KEEP</span></td></tr>
+        <tr><td>Share to Instagram</td><td>Remove → loop works fine</td><td><span class="tag tag-kill">CUT</span></td></tr>
+        <tr><td>Track caffeine</td><td>Remove → loop works fine (it's a second loop)</td><td><span class="tag tag-kill">CUT</span></td></tr>
+      </tbody>
+    </table>
+    <p>2 kept, 2 cut. Under threshold.</p>
+  </div>
+
+  <div class="card">
+    <h3>Step 4 — Surface Area <span class="tag tag-go">PASS</span></h3>
+    <ol>
+      <li>Home screen with hydration bar + log button (2 elements)</li>
+      <li>History list view (1 element: scrollable list)</li>
+      <li>Reminder settings (3 elements: toggle, time picker, frequency)</li>
+      <li>Daily goal setting (2 elements: slider, save button)</li>
+    </ol>
+    <p>4 screens, max 3 elements. Under budget.</p>
+  </div>
+
+  <div class="card">
+    <h3>Step 5 — Retention Hook <span class="tag tag-go">PASS</span></h3>
+    <p><strong>Mechanism:</strong> Unfinished State + External Trigger</p>
+    <p><strong>Implementation:</strong> Hydration bar resets daily at midnight. At 2pm if bar is under 50%, push notification: "You're at 40% — 3 glasses to go."</p>
+    <p><strong>Why user returns:</strong> Bar is visibly incomplete. Notification ties to real-world need.</p>
+  </div>
+
+  <div class="verdict-box verdict-build">VERDICT: BUILD</div>
+
+</body>
+</html>
