@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>App Selection Playbook — Sprint Decision System</title>
+  <style>
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --surface-2: #242836;
+      --border: #2e3348;
+      --text: #e4e6ef;
+      --text-muted: #8b90a5;
+      --accent: #6c8cff;
+      --accent-dim: #4a6ad9;
+      --green: #4ade80;
+      --red: #f87171;
+      --yellow: #fbbf24;
+      --orange: #fb923c;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      padding: 2rem;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 0.25rem;
+      color: var(--accent);
+    }
+
+    h2 {
+      font-size: 1.4rem;
+      font-weight: 600;
+      margin: 2.5rem 0 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--border);
+      color: var(--text);
+    }
+
+    h3 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin: 1.5rem 0 0.75rem;
+      color: var(--accent);
+    }
+
+    .subtitle {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      margin-bottom: 2rem;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .card-highlight {
+      border-left: 3px solid var(--accent);
+    }
+
+    .card-warn {
+      border-left: 3px solid var(--yellow);
+    }
+
+    .card-kill {
+      border-left: 3px solid var(--red);
+    }
+
+    .card-go {
+      border-left: 3px solid var(--green);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1rem 0;
+      font-size: 0.9rem;
+    }
+
+    th {
+      background: var(--surface-2);
+      color: var(--accent);
+      font-weight: 600;
+      text-align: left;
+      padding: 0.75rem 1rem;
+      border-bottom: 2px solid var(--border);
+    }
+
+    td {
+      padding: 0.65rem 1rem;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+
+    tr:hover td { background: var(--surface-2); }
+
+    .tag {
+      display: inline-block;
+      padding: 0.15rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .tag-kill { background: rgba(248,113,113,0.15); color: var(--red); }
+    .tag-maybe { background: rgba(251,191,36,0.15); color: var(--yellow); }
+    .tag-go { background: rgba(74,222,128,0.15); color: var(--green); }
+    .tag-data { background: rgba(108,140,255,0.15); color: var(--accent); }
+
+    code {
+      background: var(--surface-2);
+      padding: 0.15rem 0.4rem;
+      border-radius: 4px;
+      font-size: 0.85rem;
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    }
+
+    pre {
+      background: var(--surface-2);
+      padding: 1rem 1.25rem;
+      border-radius: 8px;
+      overflow-x: auto;
+      font-size: 0.85rem;
+      line-height: 1.5;
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+      margin: 0.75rem 0;
+    }
+
+    .flow-step {
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .flow-num {
+      flex-shrink: 0;
+      width: 2rem;
+      height: 2rem;
+      border-radius: 50%;
+      background: var(--accent);
+      color: var(--bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.85rem;
+    }
+
+    .flow-content { flex: 1; }
+    .flow-content strong { color: var(--accent); }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    @media (max-width: 768px) {
+      .grid-2 { grid-template-columns: 1fr; }
+      body { padding: 1rem; }
+    }
+
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 2rem 0;
+    }
+
+    .toc {
+      list-style: none;
+      padding: 0;
+    }
+
+    .toc li {
+      padding: 0.3rem 0;
+    }
+
+    .toc a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    .toc a:hover { text-decoration: underline; }
+
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .prompt-box {
+      background: var(--surface-2);
+      border: 1px solid var(--accent-dim);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      margin: 0.75rem 0;
+      font-size: 0.85rem;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    }
+
+    .meta-row {
+      display: flex;
+      gap: 2rem;
+      flex-wrap: wrap;
+      margin-bottom: 0.5rem;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .callout {
+      background: rgba(108,140,255,0.08);
+      border: 1px solid var(--accent-dim);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      margin: 1rem 0;
+      font-size: 0.9rem;
+    }
+
+    .pipeline-flow {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin: 1rem 0;
+    }
+
+    .pipeline-step {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.6rem 1rem;
+      font-size: 0.85rem;
+      text-align: center;
+    }
+
+    .pipeline-step.active {
+      border-color: var(--accent);
+      background: rgba(108,140,255,0.1);
+    }
+
+    .pipeline-arrow {
+      color: var(--text-muted);
+      font-size: 1.2rem;
+    }
+
+    .pipeline-verdict {
+      font-size: 0.7rem;
+      display: block;
+      margin-top: 0.25rem;
+      color: var(--text-muted);
+    }
+
+    ul { padding-left: 1.25rem; }
+    ul li { margin-bottom: 0.3rem; }
+  </style>
+</head>
+<body>
+
+  <h1>App Selection Playbook</h1>
+  <p class="subtitle">Sprint Decision System &mdash; Pick the right app to build next from validated ideas</p>
+
+  <!-- HOW TO USE -->
+  <h2 id="how-to-use">How to Use</h2>
+  <div class="card card-highlight">
+    <ul>
+      <li><strong>Input:</strong> Ideas that passed Astro MCP scoring (&gt;50) AND Feature Validation (BUILD verdict)</li>
+      <li><strong>Process:</strong> Walk through Steps 1&rarr;8. Each step filters or ranks.</li>
+      <li><strong>Output:</strong> Ranked top 3 with per-idea breakdown &rarr; Sprint #1</li>
+    </ul>
+  </div>
+
+  <!-- TABLE OF CONTENTS -->
+  <h2 id="toc">Table of Contents</h2>
+  <ul class="toc">
+    <li><a href="#philosophy">Core Philosophy</a></li>
+    <li><a href="#constraints">Constraints</a></li>
+    <li><a href="#pipeline">Pipeline Integration</a></li>
+    <li><a href="#step1">Step 1: Revenue Verification</a></li>
+    <li><a href="#step2">Step 2: Competitor Review Analysis</a></li>
+    <li><a href="#step3">Step 3: Anti-Flattery Critical Thinking Check</a></li>
+    <li><a href="#step4">Step 4: UI Reference Selection</a></li>
+    <li><a href="#step5">Step 5: Personal Itch Filter</a></li>
+    <li><a href="#step6">Step 6: Rank by Speed-to-Ship</a></li>
+    <li><a href="#step7">Step 7: Tiebreaker &mdash; Monetization Signal</a></li>
+    <li><a href="#step8">Step 8: Optional Accelerators</a></li>
+    <li><a href="#output">Output Template</a></li>
+    <li><a href="#post-sprint">Post-Sprint Rules</a></li>
+    <li><a href="#kill-protocol">Post-Launch Kill Protocol</a></li>
+  </ul>
+
+  <!-- CORE PHILOSOPHY -->
+  <h2 id="philosophy">Core Philosophy</h2>
+  <div class="card card-highlight">
+    <ul>
+      <li>Always copy proven revenue apps. Never invent.</li>
+      <li>Differentiate through fixing verified user pain only.</li>
+      <li>Missing features in competitors = users don't need it. Never add it.</li>
+      <li>AI must never flatter. Question every "advantage" claim.</li>
+      <li>No designer &mdash; copy UI from competitors (one primary source).</li>
+    </ul>
+  </div>
+
+  <!-- CONSTRAINTS -->
+  <h2 id="constraints">Constraints</h2>
+  <div class="card card-warn">
+    <ul>
+      <li><strong>Money first priority</strong></li>
+      <li><strong>Sprint mode:</strong> 2-3 weeks to ship</li>
+      <li><strong>Ship =</strong> core loop + paywall only (Option A from feature validation)</li>
+      <li><strong>Post-launch kill line:</strong> $300/mo within 60 days</li>
+    </ul>
+  </div>
+
+  <!-- PIPELINE INTEGRATION -->
+  <h2 id="pipeline">Pipeline Integration</h2>
+  <div class="card">
+    <div class="pipeline-flow">
+      <div class="pipeline-step">
+        <strong>Playbook 1</strong><br>Astro MCP Research
+        <span class="pipeline-verdict">KILL / CONDITIONAL / GO</span>
+      </div>
+      <span class="pipeline-arrow">&rarr;</span>
+      <div class="pipeline-step">
+        <strong>Playbook 2</strong><br>Feature Validation
+        <span class="pipeline-verdict">KILL / RESHAPE / BUILD</span>
+      </div>
+      <span class="pipeline-arrow">&rarr;</span>
+      <div class="pipeline-step active">
+        <strong>Playbook 3</strong><br>App Selection (THIS)
+        <span class="pipeline-verdict">Ranked top 3 &rarr; Sprint</span>
+      </div>
+      <span class="pipeline-arrow">&rarr;</span>
+      <div class="pipeline-step">
+        <strong>Sprint</strong><br>2-3 weeks build
+        <span class="pipeline-verdict">Launch &rarr; $300/60-day gate</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 1 -->
+  <h2 id="step1">Step 1: Revenue Verification</h2>
+  <div class="card">
+    <ul>
+      <li>Confirm competitors make real money</li>
+      <li><strong>Source:</strong> SensorTower, data.ai, AppMagic, Astro MCP, or manual estimation (price &times; review volume)</li>
+      <li><span class="tag tag-kill">KILL</span> if no competitor shows meaningful revenue</li>
+    </ul>
+  </div>
+
+  <h3>AI Prompt Template</h3>
+  <div class="prompt-box">Check revenue data for [app category].
+Sources: SensorTower, data.ai, AppMagic, App Store rankings, or estimate from subscription price x review count.
+List top 5 competitors with estimated revenue.
+KILL if no competitor shows >$10K/year revenue.</div>
+
+  <!-- STEP 2 -->
+  <h2 id="step2">Step 2: Competitor Review Analysis (pre-sprint)</h2>
+  <div class="card">
+    <ul>
+      <li>AI-assisted analysis</li>
+      <li>Read top 3 competitors &times; 50 recent negative reviews each</li>
+      <li>Categorize complaints with frequency counts</li>
+      <li><strong>Output:</strong> ranked pain point list</li>
+    </ul>
+  </div>
+
+  <h3>AI Prompt Template</h3>
+  <div class="prompt-box">For [competitor app name], scrape/export the 50 most recent 1-star and 2-star reviews.
+Categorize complaints into themes.
+Count frequency per theme.
+Output: ranked list of pain points by frequency.
+Identify max 1 pain-point feature that 50+ reviews demand.</div>
+
+  <!-- STEP 3 -->
+  <h2 id="step3">Step 3: Anti-Flattery Critical Thinking Check</h2>
+  <div class="card card-kill">
+    <h3 style="color: var(--red);">CRITICAL &mdash; The Rule</h3>
+    <p>Before claiming ANY advantage over a competitor, pass this checklist:</p>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Check</th>
+        <th>Question</th>
+        <th>Default Answer</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>&square;</td>
+        <td>Why doesn't the market leader have this feature?</td>
+        <td>They tested and removed it, or users don't need it</td>
+      </tr>
+      <tr>
+        <td>&square;</td>
+        <td>Why does the competitor do it THIS way?</td>
+        <td>They have a reason &mdash; technical, monetization, or user research</td>
+      </tr>
+      <tr>
+        <td>&square;</td>
+        <td>Is this "advantage" from real user reviews or AI flattery?</td>
+        <td>If you can't cite 50+ reviews, it's flattery</td>
+      </tr>
+      <tr>
+        <td>&square;</td>
+        <td>Can I point to 50+ reviews demanding this specific thing?</td>
+        <td>If no, DON'T add it</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Anti-patterns</h3>
+  <div class="grid-2">
+    <div class="card card-kill">
+      <h3 style="color: var(--red);">WRONG</h3>
+      <p>"App A doesn't have dark mode &mdash; great opportunity for us!"</p>
+    </div>
+    <div class="card card-go">
+      <h3 style="color: var(--green);">RIGHT</h3>
+      <p>"App A doesn't have dark mode. They have 500K users without it. Users don't need it. Skip."</p>
+    </div>
+    <div class="card card-kill">
+      <h3 style="color: var(--red);">WRONG</h3>
+      <p>"App B's onboarding is 6 screens &mdash; we can do better with 3!"</p>
+    </div>
+    <div class="card card-go">
+      <h3 style="color: var(--green);">RIGHT</h3>
+      <p>"App B uses 6 onboarding screens. Why? Maybe they tested shorter and conversion dropped. Copy their flow unless reviews specifically complain about onboarding length."</p>
+    </div>
+  </div>
+
+  <!-- STEP 4 -->
+  <h2 id="step4">Step 4: UI Reference Selection</h2>
+  <div class="card">
+    <ul>
+      <li>Pick <strong>ONE</strong> app as primary UI source (usually prettiest / highest-rated competitor)</li>
+      <li>Copy 80% of layout from primary source</li>
+      <li>Fill gaps from other competitors</li>
+      <li>No original design &mdash; copy directly</li>
+    </ul>
+  </div>
+
+  <h3>AI Prompt Template</h3>
+  <div class="prompt-box">For [app category], identify the best-looking competitor app.
+Screenshot every screen of that app.
+This is our primary UI reference -- copy layout, spacing, typography patterns.
+For screens the primary app doesn't have, find UI reference from secondary competitors.</div>
+
+  <!-- STEP 5 -->
+  <h2 id="step5">Step 5: Personal Itch Filter</h2>
+  <div class="card">
+    <p>Must pass <strong>2-of-3</strong>:</p>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Test</th>
+        <th>Question</th>
+        <th>Pass Criteria</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Recency</strong></td>
+        <td>Have I experienced this pain in the last 7 days?</td>
+        <td><span class="tag tag-go">Yes = pass</span></td>
+      </tr>
+      <tr>
+        <td><strong>Behavior</strong></td>
+        <td>Have I tried solving this with a workaround? (spreadsheet, other app, notebook)</td>
+        <td><span class="tag tag-go">Yes = pass</span></td>
+      </tr>
+      <tr>
+        <td><strong>Rant</strong></td>
+        <td>Can I rant about this problem for 2 minutes without stopping?</td>
+        <td><span class="tag tag-go">Yes = pass</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="callout">
+    <strong>Pass 2+ =</strong> proceed &nbsp;&bull;&nbsp; <strong>Pass 0-1 =</strong> skip this idea (not a real itch)
+  </div>
+
+  <h3>AI Prompt Template</h3>
+  <div class="prompt-box">For idea [name], answer honestly:
+1. Recency: When did I last feel this pain? (must be within 7 days)
+2. Behavior: What workaround am I currently using? (must name a specific tool/method)
+3. Rant: What specifically frustrates me about this problem? (must sustain 2 minutes)
+Score: ___/3. Must be >=2 to proceed.</div>
+
+  <!-- STEP 6 -->
+  <h2 id="step6">Step 6: Rank by Speed-to-Ship</h2>
+  <div class="card">
+    <ul>
+      <li>Count screens needed for core loop + paywall</li>
+      <li>Estimate data model complexity (entities, relationships)</li>
+      <li>Fastest to ship = highest rank</li>
+    </ul>
+  </div>
+
+  <h3>Example Ranking Table</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>Idea</th>
+        <th>Screens</th>
+        <th>Data Entities</th>
+        <th>Est. Build Time</th>
+        <th>Speed Rank</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>App X</strong></td>
+        <td>4</td>
+        <td>2</td>
+        <td>~2 weeks</td>
+        <td><span class="tag tag-go">#1</span></td>
+      </tr>
+      <tr>
+        <td><strong>App Y</strong></td>
+        <td>6</td>
+        <td>3</td>
+        <td>~3 weeks</td>
+        <td><span class="tag tag-maybe">#2</span></td>
+      </tr>
+      <tr>
+        <td><strong>App Z</strong></td>
+        <td>5</td>
+        <td>4</td>
+        <td>~3 weeks</td>
+        <td><span class="tag tag-kill">#3</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- STEP 7 -->
+  <h2 id="step7">Step 7: Tiebreaker &mdash; Monetization Signal</h2>
+  <div class="card">
+    <ul>
+      <li>If two ideas have same speed rank, pick the one where competitors make <strong>MORE</strong> money</li>
+      <li>Compare competitor subscription prices and estimated revenue</li>
+      <li>Higher proven revenue market wins</li>
+    </ul>
+  </div>
+
+  <!-- STEP 8 -->
+  <h2 id="step8">Step 8: Optional Accelerators</h2>
+  <div class="card">
+    <p>Two optional bumps that can change ranking:</p>
+  </div>
+
+  <div class="grid-2">
+    <div class="card card-highlight">
+      <h3>Timing Accelerator</h3>
+      <ul>
+        <li>Seasonal demand (Ramadan, tax season, back-to-school)</li>
+        <li>Trending topic or cultural moment</li>
+        <li>Platform featuring a category</li>
+        <li><strong>If tailwind exists NOW &rarr; bump up</strong></li>
+      </ul>
+    </div>
+    <div class="card card-highlight">
+      <h3>Tech Overlap Bonus</h3>
+      <ul>
+        <li>Can reuse code/infra from existing apps</li>
+        <li>Shared payment flow, onboarding pattern, component library</li>
+        <li><strong>Reusable = faster to ship = bump up</strong></li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- OUTPUT TEMPLATE -->
+  <h2 id="output">Output Template</h2>
+  <div class="card">
+    <p style="margin-bottom: 0.75rem;">For each of the top 3:</p>
+    <pre>Rank: #___
+App idea: ___
+Competitor to copy: ___
+Primary UI reference: ___
+Estimated revenue of competitor: ___
+Pain points to fix (from reviews):
+  1. ___ (frequency: ___)
+  2. ___ (frequency: ___)
+  3. ___ (frequency: ___)
+Pain-point feature to add (max 1): ___
+  Review evidence: ___ reviews demanding it
+Anti-flattery notes: ___
+Speed-to-ship: ___ weeks / ___ screens
+Personal itch score: ___/3
+Timing accelerator: YES/NO &mdash; ___
+Tech overlap: YES/NO &mdash; ___</pre>
+  </div>
+
+  <h3>Final Verdict</h3>
+  <div class="card card-go">
+    <p><strong>BUILD #1:</strong> [app name] &mdash; sprint starts now</p>
+  </div>
+  <div class="card card-warn">
+    <p><strong>FALLBACK #2:</strong> [app name] &mdash; if #1 fails $300/60-day gate</p>
+  </div>
+  <div class="card" style="border-left: 3px solid var(--text-muted);">
+    <p><strong>BENCH #3:</strong> [app name] &mdash; re-evaluate next sprint</p>
+  </div>
+
+  <!-- POST-SPRINT RULES -->
+  <h2 id="post-sprint">Post-Sprint Rules</h2>
+  <div class="card card-highlight">
+    <ul>
+      <li>App hits $300/mo in 60 days &rarr; <strong>double down</strong>, keep building</li>
+      <li>App fails $300/mo gate &rarr; <strong>grab #2 immediately</strong>, no re-evaluation</li>
+      <li>Sprint cycle complete &rarr; re-evaluate ALL survivors with full Playbook 3</li>
+      <li>Non-picked survivors stay in pool, re-evaluated each sprint</li>
+    </ul>
+  </div>
+
+  <!-- POST-LAUNCH KILL PROTOCOL -->
+  <h2 id="kill-protocol">Post-Launch Kill Protocol</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Timeline</th>
+        <th>Revenue</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Day 0-30</td>
+        <td>Any</td>
+        <td><span class="tag tag-data">Keep iterating, too early to judge</span></td>
+      </tr>
+      <tr>
+        <td>Day 31-60</td>
+        <td>&lt;$100/mo</td>
+        <td><span class="tag tag-kill">KILL &mdash; grab #2</span></td>
+      </tr>
+      <tr>
+        <td>Day 31-60</td>
+        <td>$100-299/mo</td>
+        <td><span class="tag tag-maybe">One more month &mdash; targeted fix from reviews</span></td>
+      </tr>
+      <tr>
+        <td>Day 31-60</td>
+        <td>$300+/mo</td>
+        <td><span class="tag tag-go">KEEP &mdash; double down</span></td>
+      </tr>
+      <tr>
+        <td>Day 61-90</td>
+        <td>&lt;$300/mo</td>
+        <td><span class="tag tag-kill">KILL &mdash; grab #2</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="divider"></div>
+
+  <div class="card" style="text-align: center; color: var(--text-muted);">
+    <p><strong>App Selection Playbook v1.0</strong></p>
+    <p>Created: 2026-05-14 &bull; Author: Anh @ LineCentury</p>
+    <p>Part of the 3-playbook validation pipeline: Astro MCP Research &rarr; Feature Validation &rarr; App Selection</p>
+    <p style="margin-top: 0.75rem;">Next action: Feed BUILD-verdict ideas through Steps 1&rarr;8, output ranked top 3, start Sprint #1.</p>
+  </div>
+
+</body>
+</html>

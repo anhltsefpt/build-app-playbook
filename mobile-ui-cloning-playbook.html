@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mobile App UI Cloning Playbook — Screenshot-to-Code with Claude Code</title>
+  <style>
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --surface-2: #242836;
+      --border: #2e3348;
+      --text: #e4e6ef;
+      --text-muted: #8b90a5;
+      --accent: #6c8cff;
+      --accent-dim: #4a6ad9;
+      --green: #4ade80;
+      --red: #f87171;
+      --yellow: #fbbf24;
+      --orange: #fb923c;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      padding: 2rem;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    h1 { font-size: 2rem; font-weight: 700; margin-bottom: 0.25rem; color: var(--accent); }
+    h2 { font-size: 1.4rem; font-weight: 600; margin: 2.5rem 0 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+    h3 { font-size: 1.1rem; font-weight: 600; margin: 1.5rem 0 0.75rem; color: var(--accent); }
+    .subtitle { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 2rem; }
+
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.25rem; }
+    .card-highlight { border-left: 3px solid var(--accent); }
+    .card-kill { border-left: 3px solid var(--red); }
+    .card-warn { border-left: 3px solid var(--yellow); }
+    .card-go { border-left: 3px solid var(--green); }
+
+    table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+    th { background: var(--surface-2); color: var(--accent); font-weight: 600; text-align: left; padding: 0.75rem 1rem; border-bottom: 2px solid var(--border); }
+    td { padding: 0.65rem 1rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+    tr:hover td { background: var(--surface-2); }
+
+    .tag { display: inline-block; padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+    .tag-kill { background: rgba(248,113,113,0.15); color: var(--red); }
+    .tag-warn { background: rgba(251,191,36,0.15); color: var(--yellow); }
+    .tag-go { background: rgba(74,222,128,0.15); color: var(--green); }
+    .tag-data { background: rgba(108,140,255,0.15); color: var(--accent); }
+
+    .flow-step { display: flex; align-items: flex-start; gap: 1rem; margin-bottom: 1rem; }
+    .flow-num { flex-shrink: 0; width: 2rem; height: 2rem; border-radius: 50%; background: var(--accent); color: var(--bg); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem; }
+    .flow-num-go { background: var(--green); }
+    .flow-num-warn { background: var(--yellow); color: var(--bg); }
+    .flow-num-kill { background: var(--red); }
+    .flow-content { flex: 1; }
+    .flow-content strong { color: var(--accent); }
+
+    .prompt-box { background: var(--surface-2); border: 1px solid var(--accent-dim); border-radius: 8px; padding: 1rem 1.25rem; margin: 0.75rem 0; font-size: 0.85rem; line-height: 1.5; white-space: pre-wrap; font-family: 'JetBrains Mono', 'Fira Code', monospace; }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    @media (max-width: 768px) { .grid-2 { grid-template-columns: 1fr; } body { padding: 1rem; } }
+
+    .divider { height: 1px; background: var(--border); margin: 2rem 0; }
+    code { background: var(--surface-2); padding: 0.15rem 0.4rem; border-radius: 4px; font-size: 0.85rem; font-family: 'JetBrains Mono', 'Fira Code', monospace; }
+    pre { background: var(--surface-2); padding: 1rem 1.25rem; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5; font-family: 'JetBrains Mono', 'Fira Code', monospace; margin: 0.75rem 0; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    ul, ol { margin: 0.5rem 0 0.5rem 1.25rem; }
+    li { margin-bottom: 0.3rem; }
+
+    .toc { list-style: none; padding: 0; }
+    .toc li { padding: 0.3rem 0; }
+    .toc a { color: var(--accent); text-decoration: none; }
+    .toc a:hover { text-decoration: underline; }
+
+    .callout { background: rgba(108,140,255,0.08); border: 1px solid var(--accent-dim); border-radius: 8px; padding: 1rem 1.25rem; margin: 1rem 0; font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+
+  <h1>Mobile App UI Cloning Playbook</h1>
+  <p class="subtitle">Screenshot-to-Code system for React Native / Expo using Claude Code. Clone competitor UI, validate against user stories, eliminate the "AI look."</p>
+
+  <!-- ============================================ -->
+  <!-- HOW TO USE -->
+  <!-- ============================================ -->
+  <h2 id="how-to-use">How to Use This Playbook</h2>
+
+  <div class="card card-highlight">
+    <p><strong>Input:</strong> PRD / feature list + competitor app screenshots (App A, B, C) + primary UI reference app</p>
+    <p><strong>Process:</strong> 3 phases — Prep → Per-Screen Generation → Flow Validation</p>
+    <p><strong>Output:</strong> Full React Native UI codebase, validated against user stories, visually faithful to competitor apps</p>
+    <p><strong>Tool:</strong> Claude Code (screenshot input → React Native code output, no extra tools)</p>
+    <p><strong>Stack:</strong> React Native / Expo, raw components + StyleSheet (no component library)</p>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- TABLE OF CONTENTS -->
+  <!-- ============================================ -->
+  <h2 id="toc">Table of Contents</h2>
+  <ul class="toc">
+    <li><a href="#problem">1. The Problem</a></li>
+    <li><a href="#anti-ai">2. Anti-"AI Look" Rules</a></li>
+    <li><a href="#design-tokens">3. Design Token Template</a></li>
+    <li><a href="#phase1">4. Phase 1 — Prep</a></li>
+    <li><a href="#phase2">5. Phase 2 — Per-Screen Generation</a></li>
+    <li><a href="#phase3">6. Phase 3 — Flow Validation</a></li>
+    <li><a href="#prompts">7. Claude Code Prompts</a></li>
+    <li><a href="#checklist">8. Quick Checklist</a></li>
+  </ul>
+
+  <div class="divider"></div>
+
+  <!-- ============================================ -->
+  <!-- THE PROBLEM -->
+  <!-- ============================================ -->
+  <h2 id="problem">1. The Problem</h2>
+
+  <div class="card">
+    <p>When building mobile app UI with AI, three things go wrong:</p>
+  </div>
+
+  <div class="card card-kill">
+    <h3>Problem 1: Lost Context</h3>
+    <p>You have pieces in your head — "this part from App A, this from App B, this from App C." But you manually prompt AI to connect them, lose context between sessions, and forget decisions.</p>
+  </div>
+
+  <div class="card card-kill">
+    <h3>Problem 2: Looks Like AI</h3>
+    <p>AI generates UI that looks generic — default icons, even spacing, safe color palettes, flat cards. It doesn't look like a real app. It looks like a template.</p>
+  </div>
+
+  <div class="card card-kill">
+    <h3>Problem 3: No Validation Loop</h3>
+    <p>AI generates pretty screens that don't serve the actual user flow. No connection between the UI and the tasks the user needs to complete. Screens look nice but don't work as a product.</p>
+  </div>
+
+  <div class="card card-go">
+    <h3>The Solution</h3>
+    <p>This playbook solves all three by:</p>
+    <ul>
+      <li><strong>Context:</strong> Standard design token template + screenshot-to-story mapping — nothing stays in your head</li>
+      <li><strong>Anti-AI:</strong> Extract exact design tokens from competitor screenshots — AI is constrained, not creative</li>
+      <li><strong>Validation:</strong> Every screen is generated from a user story and validated against it — AI checks first, you approve</li>
+    </ul>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ============================================ -->
+  <!-- ANTI-AI LOOK RULES -->
+  <!-- ============================================ -->
+  <h2 id="anti-ai">2. Anti-"AI Look" Rules <span class="tag tag-kill">CRITICAL</span></h2>
+
+  <div class="card card-kill">
+    <p>These 5 rules prevent AI from generating generic-looking UI. Apply to EVERY screen.</p>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Problem</th>
+        <th><span class="tag tag-kill">AI Default (BAD)</span></th>
+        <th><span class="tag tag-go">Cloned (GOOD)</span></th>
+        <th>Fix</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>1. Default Icons</strong></td>
+        <td>Uses generic icon names like "home", "settings", "user"</td>
+        <td>Uses exact icon names/style from competitor</td>
+        <td>Identify competitor's icon library (SF Symbols, Feather, Phosphor, custom). Specify exact icon names in prompt.</td>
+      </tr>
+      <tr>
+        <td><strong>2. Wrong Spacing</strong></td>
+        <td>Even 16px padding everywhere</td>
+        <td>Tight/loose rhythm matching real app</td>
+        <td>Extract exact padding/margin values from competitor screenshot. Measure gaps between elements.</td>
+      </tr>
+      <tr>
+        <td><strong>3. Missing Micro-Details</strong></td>
+        <td>Flat cards, no shadows, uniform border radius</td>
+        <td>Subtle shadows, varied radius, gradients</td>
+        <td>Extract shadow values, border radius per component type, gradient colors from competitor.</td>
+      </tr>
+      <tr>
+        <td><strong>4. Generic Colors</strong></td>
+        <td>Safe blues (#007AFF), grays (#666)</td>
+        <td>Exact hex values from competitor's palette</td>
+        <td>Color-pick from competitor screenshots. Extract primary, secondary, background, text, accent colors.</td>
+      </tr>
+      <tr>
+        <td><strong>5. Wrong Components</strong></td>
+        <td>Material Design defaults, basic TextInput</td>
+        <td>Custom-styled components matching competitor</td>
+        <td>Use raw React Native + StyleSheet. No component library. Style every component to match screenshot.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="callout">
+    <strong>The Rule:</strong> AI should be a <em>copier</em>, not a <em>designer</em>. Every visual decision comes from a competitor screenshot — never from AI's "taste."
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ============================================ -->
+  <!-- DESIGN TOKEN TEMPLATE -->
+  <!-- ============================================ -->
+  <h2 id="design-tokens">3. Design Token Template</h2>
+
+  <div class="card card-highlight">
+    <p>Extract design tokens from your <strong>primary UI reference app</strong> (chosen in App Selection Playbook) into this standard file. All screens reference this file. Per-screen overrides allowed when borrowing from App B or C.</p>
+  </div>
+
+  <h3>Standard File: <code>design-tokens.ts</code></h3>
+
+  <pre>// design-tokens.ts
+// Extracted from: [Primary UI Reference App Name]
+// Date: [extraction date]
+
+export const colors = {
+  // Primary palette — extracted from competitor screenshots
+  primary: '#______',        // Main brand color
+  primaryLight: '#______',   // Lighter variant
+  primaryDark: '#______',    // Darker variant
+  secondary: '#______',      // Secondary accent
+
+  // Backgrounds
+  background: '#______',     // Main screen background
+  surface: '#______',        // Card/container background
+  surfaceElevated: '#______', // Elevated card background
+
+  // Text
+  textPrimary: '#______',    // Main text color
+  textSecondary: '#______',  // Muted/secondary text
+  textInverse: '#______',    // Text on dark backgrounds
+
+  // Semantic
+  success: '#______',        // Positive actions, completion
+  error: '#______',          // Errors, destructive actions
+  warning: '#______',        // Warnings, caution
+  info: '#______',           // Informational
+
+  // Borders & dividers
+  border: '#______',
+  divider: '#______',
+};
+
+export const spacing = {
+  // Extracted from competitor's spacing rhythm
+  xs: ___,    // e.g., 4
+  sm: ___,    // e.g., 8
+  md: ___,    // e.g., 12
+  lg: ___,    // e.g., 16
+  xl: ___,    // e.g., 24
+  xxl: ___,   // e.g., 32
+
+  // Screen-level padding
+  screenHorizontal: ___,  // e.g., 20
+  screenTop: ___,         // e.g., 16
+
+  // Component-specific
+  cardPadding: ___,       // e.g., 16
+  cardGap: ___,           // e.g., 12 (gap between cards)
+  listItemPadding: ___,   // e.g., 14
+  sectionGap: ___,        // e.g., 24 (gap between sections)
+};
+
+export const borderRadius = {
+  // Extracted per component type
+  button: ___,       // e.g., 12
+  card: ___,         // e.g., 16
+  input: ___,        // e.g., 10
+  chip: ___,         // e.g., 20
+  avatar: ___,       // e.g., 999 (fully round)
+  modal: ___,        // e.g., 20
+  bottomSheet: ___,  // e.g., 24
+};
+
+export const typography = {
+  // Font sizes — extracted from competitor proportions
+  title: { fontSize: ___, fontWeight: '___' as const, lineHeight: ___ },
+  heading: { fontSize: ___, fontWeight: '___' as const, lineHeight: ___ },
+  subheading: { fontSize: ___, fontWeight: '___' as const, lineHeight: ___ },
+  body: { fontSize: ___, fontWeight: '___' as const, lineHeight: ___ },
+  bodySmall: { fontSize: ___, fontWeight: '___' as const, lineHeight: ___ },
+  caption: { fontSize: ___, fontWeight: '___' as const, lineHeight: ___ },
+  button: { fontSize: ___, fontWeight: '___' as const, lineHeight: ___, letterSpacing: ___ },
+};
+
+export const shadows = {
+  // Extracted from competitor's shadow patterns
+  card: {
+    shadowColor: '#______',
+    shadowOffset: { width: ___, height: ___ },
+    shadowOpacity: ___,
+    shadowRadius: ___,
+    elevation: ___,  // Android
+  },
+  elevated: {
+    shadowColor: '#______',
+    shadowOffset: { width: ___, height: ___ },
+    shadowOpacity: ___,
+    shadowRadius: ___,
+    elevation: ___,
+  },
+  button: {
+    shadowColor: '#______',
+    shadowOffset: { width: ___, height: ___ },
+    shadowOpacity: ___,
+    shadowRadius: ___,
+    elevation: ___,
+  },
+};
+
+export const icons = {
+  // Icon library used by competitor
+  library: '______',  // e.g., 'SF Symbols', 'Feather', 'Phosphor', 'Ionicons'
+
+  // Common icon mappings — use exact names from competitor's style
+  home: '______',
+  add: '______',
+  back: '______',
+  close: '______',
+  settings: '______',
+  search: '______',
+  check: '______',
+  chevronRight: '______',
+  // Add app-specific icons as needed
+};</pre>
+
+  <div class="callout">
+    <strong>How to extract:</strong> Feed primary competitor screenshots to Claude Code with the prompt: "Extract design tokens from these screenshots. Fill in the design-tokens.ts template." Claude can identify colors, estimate spacing, and determine icon style from screenshots.
+  </div>
+
+  <h3>Per-Screen Overrides</h3>
+  <div class="card">
+    <p>When borrowing a screen from App B or C (not the primary reference), extract only what's different:</p>
+    <pre>// Screen: ActivityDetail
+// Borrowed from: App B
+// Overrides from primary design system:
+
+const screenOverrides = {
+  cardBorderRadius: 20,    // App B uses rounder cards
+  listItemPadding: 18,     // App B has more breathing room
+  // All other tokens: use design-tokens.ts defaults
+};</pre>
+    <p style="margin-top: 0.75rem; color: var(--text-muted);">Only override what's visually different. Keep everything else from the primary design system for consistency.</p>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ============================================ -->
+  <!-- PHASE 1: PREP -->
+  <!-- ============================================ -->
+  <h2 id="phase1">4. Phase 1 — Prep</h2>
+
+  <div class="card card-highlight">
+    <p>Before generating any UI code, complete all 4 prep steps. Skipping any step = generic output.</p>
+  </div>
+
+  <!-- Step 1 -->
+  <h3>Step 1: Generate User Stories from PRD <span class="tag tag-warn">MANDATORY</span></h3>
+
+  <div class="card card-warn">
+    <p><strong>You always skip this step.</strong> That's why AI generates screens that don't connect to real user flows. This step is now mandatory.</p>
+    <p style="margin-top: 0.75rem;">AI generates medium-detail user stories from your PRD/feature list. You confirm.</p>
+  </div>
+
+  <h3>User Story Format (Medium Detail)</h3>
+  <div class="prompt-box">STORY: [Story name]
+AS A: [user type]
+I WANT TO: [action — specific tap/input]
+SO THAT: [outcome — what user gets]
+
+FLOW:
+1. User sees [screen name] with [key elements visible]
+2. User taps [specific element]
+3. Screen shows [response — what changes]
+4. User [next action]
+5. Result: [end state]
+
+REQUIRED ELEMENTS:
+- [button/input/display element 1]
+- [button/input/display element 2]
+- [button/input/display element 3]</div>
+
+  <h3>Example: Debt Payoff Tracker</h3>
+  <div class="grid-2">
+    <div class="card card-kill">
+      <h3>TOO SIMPLE (not enough to validate)</h3>
+      <pre>User logs a payment.</pre>
+    </div>
+    <div class="card card-go">
+      <h3>MEDIUM DETAIL (just right)</h3>
+      <pre>STORY: Log Debt Payment
+AS A: debt holder
+I WANT TO: log a payment I made
+SO THAT: I see my debt-free date move closer
+
+FLOW:
+1. User sees debt list with each debt showing
+   name, balance, minimum payment
+2. User taps a specific debt card
+3. Screen shows debt detail with "Log Payment" button
+4. User taps "Log Payment" → input modal appears
+5. User enters amount → taps "Save"
+6. Debt balance updates, debt-free date recalculates
+7. Result: updated balance + new debt-free date visible
+
+REQUIRED ELEMENTS:
+- Debt card with name, balance, min payment
+- "Log Payment" button
+- Amount input with number keyboard
+- Updated debt-free date display</pre>
+    </div>
+  </div>
+
+  <div class="prompt-box">AI PROMPT — Step 1:
+Read my PRD at [path]. Generate user stories for each core feature.
+Use medium detail: AS A / I WANT TO / SO THAT + numbered flow + required elements.
+Do NOT add features not in the PRD.
+Do NOT make up user flows — derive from the PRD's feature descriptions.
+Output all stories. I will confirm or adjust before proceeding.</div>
+
+  <!-- Step 2 -->
+  <h3>Step 2: Confirm User Stories</h3>
+  <div class="card">
+    <p>Review each story. Check:</p>
+    <ul>
+      <li>Does the flow match what you want the app to do?</li>
+      <li>Are all required elements listed?</li>
+      <li>Is anything missing from the PRD?</li>
+      <li>Is anything added that's NOT in the PRD?</li>
+    </ul>
+    <p style="margin-top: 0.75rem;"><strong>Do NOT proceed until all stories are confirmed.</strong></p>
+  </div>
+
+  <!-- Step 3 -->
+  <h3>Step 3: Extract Design System from Primary UI Reference</h3>
+
+  <div class="card card-highlight">
+    <p>Take screenshots of your primary UI reference app (chosen in App Selection Playbook). Feed them to Claude Code to fill the <code>design-tokens.ts</code> template.</p>
+  </div>
+
+  <div class="prompt-box">AI PROMPT — Step 3:
+Here are screenshots from [Primary UI Reference App Name].
+This is my primary UI reference — I'm cloning this app's visual style.
+
+Extract design tokens and fill in design-tokens.ts:
+- Exact hex colors (use color picker precision, not guesses)
+- Spacing rhythm (measure gaps between elements)
+- Border radius per component type (cards, buttons, inputs)
+- Typography scale (estimate font sizes from proportions)
+- Shadow values (estimate blur, offset, opacity)
+- Icon library identification (SF Symbols? Feather? Phosphor? Custom?)
+
+Output the filled design-tokens.ts file.</div>
+
+  <!-- Step 4 -->
+  <h3>Step 4: Map Screenshots to Stories</h3>
+
+  <div class="card">
+    <p>For each user story, assign which competitor screenshot to clone:</p>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>User Story</th>
+        <th>Screenshot Source</th>
+        <th>What to Clone</th>
+        <th>Override Needed?</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Home — debt list</td>
+        <td>App A — home screen</td>
+        <td>Card layout, list style, header</td>
+        <td>No — primary reference</td>
+      </tr>
+      <tr>
+        <td>Debt detail</td>
+        <td>App B — detail screen</td>
+        <td>Chart style, action buttons layout</td>
+        <td>Yes — rounder cards, more padding</td>
+      </tr>
+      <tr>
+        <td>Log payment modal</td>
+        <td>App C — input modal</td>
+        <td>Modal style, input field, keyboard layout</td>
+        <td>Yes — different modal radius</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="prompt-box">MAPPING TEMPLATE:
+Story: [story name]
+  Clone from: [App name] — [screen name]
+  Screenshot file: [path to screenshot]
+  What to clone: [specific elements]
+  Design token overrides: [list or "none — use primary"]
+
+Story: [story name]
+  Clone from: [App name] — [screen name]
+  Screenshot file: [path to screenshot]
+  What to clone: [specific elements]
+  Design token overrides: [list or "none — use primary"]
+
+...</div>
+
+  <div class="divider"></div>
+
+  <!-- ============================================ -->
+  <!-- PHASE 2: PER-SCREEN GENERATION -->
+  <!-- ============================================ -->
+  <h2 id="phase2">5. Phase 2 — Per-Screen Generation</h2>
+
+  <div class="card card-highlight">
+    <p>Generate one screen at a time. Each screen goes through: Generate → Render → AI Validate → You Approve.</p>
+  </div>
+
+  <h3>Per-Screen Loop</h3>
+
+  <div class="flow-step">
+    <div class="flow-num">1</div>
+    <div class="flow-content">
+      <strong>Feed AI: Screenshot + Story + Design Tokens</strong><br>
+      Give Claude Code three inputs simultaneously: the competitor screenshot to clone, the user story this screen must serve, and the design-tokens.ts file (+ any overrides for this screen).
+    </div>
+  </div>
+
+  <div class="flow-step">
+    <div class="flow-num">2</div>
+    <div class="flow-content">
+      <strong>AI Generates React Native Code</strong><br>
+      Output: raw React Native components + StyleSheet. No component library. All style values from design-tokens.ts. Layout matches the competitor screenshot. Interactive elements match the user story's required elements.
+    </div>
+  </div>
+
+  <div class="flow-step">
+    <div class="flow-num">3</div>
+    <div class="flow-content">
+      <strong>Render in Simulator</strong><br>
+      Run the app in iOS Simulator. Take a screenshot of the rendered screen.
+    </div>
+  </div>
+
+  <div class="flow-step">
+    <div class="flow-num-go flow-num">4</div>
+    <div class="flow-content">
+      <strong>AI Validates Against User Story (First Pass)</strong><br>
+      Feed the rendered screenshot back to Claude Code with the user story. AI checks: are all required elements present? Are they interactive? Does the layout support the flow?
+    </div>
+  </div>
+
+  <div class="flow-step">
+    <div class="flow-num-go flow-num">5</div>
+    <div class="flow-content">
+      <strong>You Validate (Final Approval)</strong><br>
+      You check: does it look like the competitor screenshot? Does spacing feel right? Any "AI look" issues? Would you download an app that looks like this?
+    </div>
+  </div>
+
+  <div class="flow-step">
+    <div class="flow-num-warn flow-num">6</div>
+    <div class="flow-content">
+      <strong>Pass or Fix</strong><br>
+      If pass → move to next screen.<br>
+      If fail → identify what's wrong, fix, re-render, back to step 4.
+    </div>
+  </div>
+
+  <h3>AI Generation Prompt</h3>
+  <div class="prompt-box">AI PROMPT — Per-Screen Generation:
+
+SCREENSHOT: [attached competitor screenshot]
+Clone this screen's visual layout exactly.
+
+USER STORY:
+[paste the full user story for this screen]
+
+DESIGN TOKENS: Use values from design-tokens.ts
+[paste any per-screen overrides if applicable]
+
+RULES:
+- React Native + Expo, raw components + StyleSheet only
+- NO component libraries (no Paper, no NativeBase, no Tamagui)
+- ALL colors from design-tokens.ts — do NOT pick your own colors
+- ALL spacing from design-tokens.ts — do NOT use even spacing
+- ALL border radius from design-tokens.ts — do NOT use uniform radius
+- Match icon style from design-tokens.ts icons.library
+- Every element in REQUIRED ELEMENTS must be present and interactive
+- Layout must match the screenshot — same proportions, same hierarchy
+- Include shadows as specified in design-tokens.ts
+
+OUTPUT: Complete screen component file with StyleSheet.</div>
+
+  <h3>AI Validation Prompt</h3>
+  <div class="prompt-box">AI PROMPT — Validation:
+
+RENDERED SCREENSHOT: [attached screenshot of rendered screen]
+
+COMPETITOR SCREENSHOT: [attached original competitor screenshot]
+
+USER STORY:
+[paste user story]
+
+CHECK:
+1. Are ALL required elements from the story present on screen?
+2. Is each required element visually accessible (not hidden, not tiny)?
+3. Does the layout match the competitor screenshot?
+4. Are colors matching design-tokens.ts? (no AI-default blues/grays)
+5. Is spacing varied (not uniform 16px everywhere)?
+6. Are shadows/border-radius matching tokens?
+7. Would a user be able to complete the story flow on this screen?
+
+OUTPUT:
+- PASS or FAIL
+- If FAIL: list specific issues with line-level fix suggestions</div>
+
+  <div class="divider"></div>
+
+  <!-- ============================================ -->
+  <!-- PHASE 3: FLOW VALIDATION -->
+  <!-- ============================================ -->
+  <h2 id="phase3">6. Phase 3 — Flow Validation</h2>
+
+  <div class="card card-highlight">
+    <p>After all screens pass individually, test the complete flow end-to-end.</p>
+  </div>
+
+  <h3>Flow Validation Checklist</h3>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Check</th>
+        <th>Question</th>
+        <th>If Fail</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Navigation</strong></td>
+        <td>Does every screen connect to the next correctly?</td>
+        <td>Fix navigation wiring, check stack/tab setup</td>
+      </tr>
+      <tr>
+        <td><strong>Story Completion</strong></td>
+        <td>Can user complete every user story start-to-finish?</td>
+        <td>Identify missing step, add screen or element</td>
+      </tr>
+      <tr>
+        <td><strong>Back Navigation</strong></td>
+        <td>Can user go back from every screen?</td>
+        <td>Add back button/gesture handler</td>
+      </tr>
+      <tr>
+        <td><strong>Data Flow</strong></td>
+        <td>Does data entered on one screen appear correctly on another?</td>
+        <td>Fix state management / props passing</td>
+      </tr>
+      <tr>
+        <td><strong>Visual Consistency</strong></td>
+        <td>Do all screens look like they belong to the same app?</td>
+        <td>Check design-tokens.ts usage, fix outlier screens</td>
+      </tr>
+      <tr>
+        <td><strong>No Dead Ends</strong></td>
+        <td>Is there any screen the user can reach but can't leave?</td>
+        <td>Add navigation escape (back, close, dismiss)</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="prompt-box">AI PROMPT — Flow Validation:
+I've built all screens. Here are screenshots of every screen in the app:
+[attach all rendered screenshots]
+
+Here are all user stories:
+[paste all stories]
+
+CHECK:
+1. Can every user story be completed start-to-finish?
+2. Are all screen transitions logical?
+3. Is any required element missing from any screen?
+4. Do all screens share consistent visual style?
+5. Are there any dead ends?
+
+OUTPUT:
+- PASS or list of issues with specific screen + fix suggestions</div>
+
+  <div class="divider"></div>
+
+  <!-- ============================================ -->
+  <!-- CLAUDE CODE PROMPTS -->
+  <!-- ============================================ -->
+  <h2 id="prompts">7. Claude Code Prompts — Copy-Paste Reference</h2>
+
+  <h3>Prompt 1: Generate User Stories</h3>
+  <div class="prompt-box">Read my PRD at [path].
+Generate user stories for each core feature.
+Format: AS A / I WANT TO / SO THAT + numbered flow (5-7 steps) + required UI elements.
+Do NOT add features not in the PRD.
+Do NOT invent user flows — derive strictly from PRD.
+Output all stories for my review.</div>
+
+  <h3>Prompt 2: Extract Design Tokens</h3>
+  <div class="prompt-box">Here are screenshots from [App Name], my primary UI reference.
+Extract design tokens and fill in the design-tokens.ts template:
+- Exact hex colors (primary, secondary, background, text, semantic)
+- Spacing rhythm (xs through xxl, screen padding, card padding, gaps)
+- Border radius per component (button, card, input, chip, modal)
+- Typography scale (title, heading, body, caption — size, weight, line height)
+- Shadow values per elevation level (card, elevated, button)
+- Icon library identification + common icon name mappings
+Output the complete filled design-tokens.ts file.</div>
+
+  <h3>Prompt 3: Generate Screen</h3>
+  <div class="prompt-box">[Attach competitor screenshot]
+Clone this screen's visual layout.
+
+User story for this screen:
+[paste story]
+
+Use design-tokens.ts for all style values.
+[Paste any per-screen overrides]
+
+Rules:
+- React Native + Expo, raw components + StyleSheet
+- No component libraries
+- All visual values from design tokens — no AI defaults
+- Every required element from the story must be present
+- Layout matches the screenshot proportions exactly
+
+Output: complete component file.</div>
+
+  <h3>Prompt 4: Validate Screen</h3>
+  <div class="prompt-box">[Attach rendered screenshot] [Attach competitor screenshot]
+
+User story: [paste story]
+
+Check: all required elements present? Layout matches competitor? Colors/spacing from tokens? User can complete the flow?
+Output: PASS or FAIL with specific issues.</div>
+
+  <h3>Prompt 5: Validate Full Flow</h3>
+  <div class="prompt-box">[Attach all rendered screenshots]
+[Paste all user stories]
+
+Check: every story completable start-to-finish? Transitions logical? No dead ends? Visual consistency?
+Output: PASS or issue list with fixes.</div>
+
+  <div class="divider"></div>
+
+  <!-- ============================================ -->
+  <!-- QUICK CHECKLIST -->
+  <!-- ============================================ -->
+  <h2 id="checklist">8. Quick Checklist</h2>
+
+  <div class="card card-highlight">
+    <p>Run through before declaring UI complete:</p>
+  </div>
+
+  <div class="prompt-box">UI COMPLETION CHECKLIST:
+
+PREP:
+□ User stories generated from PRD (AI-generated, user-confirmed)
+□ Design tokens extracted from primary UI reference into design-tokens.ts
+□ Every story mapped to a competitor screenshot source
+□ Per-screen overrides documented where needed
+
+PER-SCREEN:
+□ Every screen generated from: screenshot + story + design tokens
+□ Every screen rendered in simulator
+□ Every screen AI-validated against user story
+□ Every screen you-approved (final check)
+□ No "AI look" issues (default icons, even spacing, generic colors, flat cards, wrong components)
+
+FLOW:
+□ All screens connected — navigation works end-to-end
+□ Every user story completable start-to-finish
+□ No dead-end screens
+□ Data flows correctly between screens
+□ Visual consistency across all screens (same design system)
+
+ANTI-"AI LOOK" FINAL CHECK:
+□ Colors are from competitor, not AI defaults
+□ Spacing varies (tight/loose rhythm), not uniform
+□ Shadows and border radius match competitor
+□ Icons are from correct library, not generic
+□ Components are raw StyleSheet, not library defaults
+
+READY: YES / NO</div>
+
+  <div class="divider"></div>
+
+  <!-- ============================================ -->
+  <!-- AI INSTRUCTION -->
+  <!-- ============================================ -->
+  <div class="prompt-box">AI INSTRUCTION: When user triggers UI cloning workflow:
+1. Phase 1 is MANDATORY — do not skip user stories or design token extraction.
+2. User stories come from PRD, not from your imagination.
+3. Design tokens come from competitor screenshots, not from your defaults.
+4. Generate one screen at a time — do not batch.
+5. Validate every screen against its user story before moving on.
+6. Use ONLY raw React Native + StyleSheet — no component libraries.
+7. Every color, spacing, radius, shadow value must come from design-tokens.ts.
+8. If user has not confirmed stories → do NOT proceed to generation.
+9. If design tokens are not extracted → do NOT proceed to generation.
+10. Be a copier, not a designer. Every visual decision from a screenshot, never from taste.</div>
+
+</body>
+</html>

@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>App Store Screenshot Playbook — Screenshot Generation System</title>
+  <style>
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --surface-2: #242836;
+      --border: #2e3348;
+      --text: #e4e6ef;
+      --text-muted: #8b90a5;
+      --accent: #6c8cff;
+      --accent-dim: #4a6ad9;
+      --green: #4ade80;
+      --red: #f87171;
+      --yellow: #fbbf24;
+      --orange: #fb923c;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      padding: 2rem;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    h1 { font-size: 2rem; font-weight: 700; margin-bottom: 0.25rem; color: var(--accent); }
+    h2 { font-size: 1.4rem; font-weight: 600; margin: 2.5rem 0 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+    h3 { font-size: 1.1rem; font-weight: 600; margin: 1.5rem 0 0.75rem; color: var(--accent); }
+    .subtitle { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 2rem; }
+
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.25rem; }
+    .card-highlight { border-left: 3px solid var(--accent); }
+    .card-kill { border-left: 3px solid var(--red); }
+    .card-warn { border-left: 3px solid var(--yellow); }
+    .card-go { border-left: 3px solid var(--green); }
+
+    table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+    th { background: var(--surface-2); color: var(--accent); font-weight: 600; text-align: left; padding: 0.75rem 1rem; border-bottom: 2px solid var(--border); }
+    td { padding: 0.65rem 1rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+    tr:hover td { background: var(--surface-2); }
+
+    .tag { display: inline-block; padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+    .tag-kill { background: rgba(248,113,113,0.15); color: var(--red); }
+    .tag-warn { background: rgba(251,191,36,0.15); color: var(--yellow); }
+    .tag-go { background: rgba(74,222,128,0.15); color: var(--green); }
+    .tag-data { background: rgba(108,140,255,0.15); color: var(--accent); }
+
+    .flow-step { display: flex; align-items: flex-start; gap: 1rem; margin-bottom: 1rem; }
+    .flow-num { flex-shrink: 0; width: 2rem; height: 2rem; border-radius: 50%; background: var(--accent); color: var(--bg); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem; }
+    .flow-num-go { background: var(--green); }
+    .flow-num-warn { background: var(--yellow); color: var(--bg); }
+    .flow-content { flex: 1; }
+    .flow-content strong { color: var(--accent); }
+
+    .prompt-box { background: var(--surface-2); border: 1px solid var(--accent-dim); border-radius: 8px; padding: 1rem 1.25rem; margin: 0.75rem 0; font-size: 0.85rem; line-height: 1.5; white-space: pre-wrap; font-family: 'JetBrains Mono', 'Fira Code', monospace; }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    @media (max-width: 768px) { .grid-2 { grid-template-columns: 1fr; } body { padding: 1rem; } }
+
+    .divider { height: 1px; background: var(--border); margin: 2rem 0; }
+    code { background: var(--surface-2); padding: 0.15rem 0.4rem; border-radius: 4px; font-size: 0.85rem; font-family: 'JetBrains Mono', 'Fira Code', monospace; }
+    pre { background: var(--surface-2); padding: 1rem 1.25rem; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5; font-family: 'JetBrains Mono', 'Fira Code', monospace; margin: 0.75rem 0; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    ul, ol { margin: 0.5rem 0 0.5rem 1.25rem; }
+    li { margin-bottom: 0.3rem; }
+
+    .toc { list-style: none; padding: 0; }
+    .toc li { padding: 0.3rem 0; }
+    .toc a { color: var(--accent); text-decoration: none; }
+    .toc a:hover { text-decoration: underline; }
+
+    .callout { background: rgba(108,140,255,0.08); border: 1px solid var(--accent-dim); border-radius: 8px; padding: 1rem 1.25rem; margin: 1rem 0; font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+
+  <h1>App Store Screenshot Playbook</h1>
+  <p class="subtitle">Screenshot generation system using claude-skill-aso-appstore-screenshots. Standalone process — run when any app needs App Store listing screenshots.</p>
+
+  <!-- ============================================ -->
+  <!-- HOW TO USE -->
+  <!-- ============================================ -->
+  <h2 id="how-to-use">How to Use This Playbook</h2>
+
+  <div class="card card-highlight">
+    <p><strong>Input:</strong> An app ready for App Store listing (new launch or existing app needing screenshot refresh)</p>
+    <p><strong>Process:</strong> Walk through Steps 1→7 sequentially. Each step builds on the previous.</p>
+    <p><strong>Output:</strong> 5 App Store-ready screenshots (1290×2796px) + showcase preview image</p>
+    <p><strong>Time:</strong> ~1-2 hours total (benefit discovery + screenshot capture + generation)</p>
+  </div>
+
+  <div class="callout">
+    <strong>Tool Required:</strong> <a href="https://github.com/adamlyttleapps/claude-skill-aso-appstore-screenshots">claude-skill-aso-appstore-screenshots</a><br>
+    Install: <code>claude install-skill github.com/adamlyttleapps/claude-skill-aso-appstore-screenshots</code><br>
+    Dependencies: Python 3 + Pillow, SF Pro Display Black font, Gemini MCP server
+  </div>
+
+  <!-- ============================================ -->
+  <!-- TABLE OF CONTENTS -->
+  <!-- ============================================ -->
+  <h2 id="toc">Table of Contents</h2>
+  <ul class="toc">
+    <li><a href="#triggers">1. When to Run</a></li>
+    <li><a href="#rules">2. Core Rules</a></li>
+    <li><a href="#step1">3. Step 1 — Benefit Discovery</a></li>
+    <li><a href="#step2">4. Step 2 — Simulator Screenshots</a></li>
+    <li><a href="#step3">5. Step 3 — Localization Check</a></li>
+    <li><a href="#step4">6. Step 4 — Brand Color</a></li>
+    <li><a href="#step5">7. Step 5 — Generation</a></li>
+    <li><a href="#step6">8. Step 6 — Version Selection</a></li>
+    <li><a href="#step7">9. Step 7 — Final Output</a></li>
+    <li><a href="#checklist">10. Quick Checklist</a></li>
+  </ul>
+
+  <div class="divider"></div>
+
+  <!-- ============================================ -->
+  <!-- TRIGGERS -->
+  <!-- ============================================ -->
+  <h2 id="triggers">1. When to Run</h2>
+
+  <div class="card">
+    <p>This playbook is a <strong>standalone process</strong> — not tied to any sprint or development workflow. Run it whenever:</p>
+    <table>
+      <thead>
+        <tr><th>Trigger</th><th>When</th><th>Goal</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="tag tag-go">NEW LAUNCH</span></td>
+          <td>App is built, ready for App Store submission</td>
+          <td>Create initial screenshot set for listing</td>
+        </tr>
+        <tr>
+          <td><span class="tag tag-data">ASO REFRESH</span></td>
+          <td>Existing app needs better conversion</td>
+          <td>Replace screenshots to improve download rate</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ============================================ -->
+  <!-- CORE RULES -->
+  <!-- ============================================ -->
+  <h2 id="rules">2. Core Rules</h2>
+
+  <div class="card card-warn">
+    <h3>Non-Negotiable Rules</h3>
+    <ul>
+      <li><strong>5 screenshots per app</strong> — maps 1:1 to 3-5 benefits from discovery</li>
+      <li><strong>Core loop screens only</strong> — skip settings, onboarding, paywall screens</li>
+      <li><strong>Staged ideal data</strong> — populate with impressive-looking fake data (big numbers, full history, nice charts)</li>
+      <li><strong>Cleanest version wins</strong> — when picking from AI-generated versions, choose most readable, least noisy</li>
+      <li><strong>Auto-detect brand color</strong> — use color from app's codebase design, don't invent</li>
+    </ul>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ============================================ -->
+  <!-- STEP 1: BENEFIT DISCOVERY -->
+  <!-- ============================================ -->
+  <h2 id="step1">3. Step 1 — Benefit Discovery <span class="tag tag-data">MOST CRITICAL</span></h2>
+
+  <div class="card card-highlight">
+    <p>This phase sets the foundation for everything. Follow the 4-step process strictly. Do not rush. Do not skip to screenshot generation.</p>
+  </div>
+
+  <!-- Step 1.1 -->
+  <h3>Step 1.1: Analyze the Codebase</h3>
+  <div class="card">
+    <p>Read the app's codebase thoroughly. Build a mental model of:</p>
+    <ul>
+      <li><strong>What the app does</strong> — UI files, screens, components. What can the user actually DO?</li>
+      <li><strong>Who it's for</strong> — models, data structures. What domain does it operate in?</li>
+      <li><strong>What's premium</strong> — IAP, subscriptions, feature flags. What's the paid offering?</li>
+      <li><strong>What it highlights first</strong> — onboarding flows, README, marketing copy in code</li>
+    </ul>
+  </div>
+
+  <!-- Step 1.2 -->
+  <h3>Step 1.2: Ask Clarifying Questions</h3>
+  <div class="card">
+    <p>After analysis, present what you've learned and ask targeted questions to fill gaps:</p>
+    <ul>
+      <li>"Based on the code, this appears to be [X]. Is that right?"</li>
+      <li>"Who is your target audience? (age, interests, skill level)"</li>
+      <li>"What's the #1 reason someone downloads this app?"</li>
+      <li>"Who are your main competitors?"</li>
+      <li>"What do your best reviews say? What do users love most?"</li>
+    </ul>
+    <p style="margin-top: 0.75rem; color: var(--text-muted);">Don't ask questions the code already answers.</p>
+  </div>
+
+  <!-- Step 1.3 -->
+  <h3>Step 1.3: Draft Core Benefits <span class="tag tag-kill">STRICT RULES</span></h3>
+  <div class="card card-kill">
+    <p>Draft 3-5 core benefits. Each benefit <strong>MUST</strong>:</p>
+    <ol>
+      <li><strong>Lead with an action verb</strong> — TRACK, CRUSH, BUILD, FIND, SAVE, LEARN, SEE, SPEAK, MASTER, HEAR...</li>
+      <li><strong>Focus on what the USER gets</strong>, not what the app does technically</li>
+      <li><strong>Be specific enough to compel download</strong> — vague = scroll past</li>
+      <li><strong>Answer the user's unspoken question:</strong> "Why should I download this instead of scrolling past?"</li>
+    </ol>
+  </div>
+
+  <h3>Benefit Examples — 3 App Types</h3>
+
+  <table>
+    <thead>
+      <tr>
+        <th>App Type</th>
+        <th><span class="tag tag-kill">BAD (generic)</span></th>
+        <th><span class="tag tag-go">GOOD (specific)</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td rowspan="3"><strong>Debt Payoff Tracker</strong></td>
+        <td>MANAGE YOUR FINANCES</td>
+        <td>CRUSH DEBT FASTER</td>
+      </tr>
+      <tr>
+        <td>VIEW YOUR DEBTS</td>
+        <td>SEE YOUR DEBT-FREE DATE</td>
+      </tr>
+      <tr>
+        <td>TRACK PAYMENTS</td>
+        <td>SAVE THOUSANDS IN INTEREST</td>
+      </tr>
+      <tr>
+        <td rowspan="3"><strong>Habit Tracker</strong></td>
+        <td>BUILD BETTER HABITS</td>
+        <td>TRACK YOUR CLEAN STREAK</td>
+      </tr>
+      <tr>
+        <td>SET DAILY REMINDERS</td>
+        <td>NEVER BREAK THE CHAIN</td>
+      </tr>
+      <tr>
+        <td>VIEW YOUR PROGRESS</td>
+        <td>SEE HOW FAR YOU'VE COME</td>
+      </tr>
+      <tr>
+        <td rowspan="3"><strong>Language Learning</strong></td>
+        <td>LEARN A NEW LANGUAGE</td>
+        <td>SPEAK SPANISH IN 10 MINUTES A DAY</td>
+      </tr>
+      <tr>
+        <td>STUDY VOCABULARY</td>
+        <td>MASTER 1000 ESSENTIAL WORDS</td>
+      </tr>
+      <tr>
+        <td>PRACTICE DAILY</td>
+        <td>HEAR YOUR PRONUNCIATION SCORE</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="grid-2">
+    <div class="card card-kill">
+      <h3>What Makes a BAD Benefit</h3>
+      <ul>
+        <li>Generic verbs: MANAGE, USE, ACCESS, GET</li>
+        <li>Describes the app, not the user's gain</li>
+        <li>Could apply to any app in the category</li>
+        <li>No emotional pull — user scrolls past</li>
+      </ul>
+    </div>
+    <div class="card card-go">
+      <h3>What Makes a GOOD Benefit</h3>
+      <ul>
+        <li>Strong action verbs: CRUSH, MASTER, TRACK, SEE</li>
+        <li>Describes what the user GETS or FEELS</li>
+        <li>Specific to THIS app's unique loop</li>
+        <li>Creates urgency or curiosity — user taps to download</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="prompt-box">AI TEMPLATE — Step 1.3:
+Present benefits in this format:
+
+1. [ACTION VERB] + [BENEFIT] — [why this drives downloads]
+2. [ACTION VERB] + [BENEFIT] — [why this drives downloads]
+3. [ACTION VERB] + [BENEFIT] — [why this drives downloads]
+4. [ACTION VERB] + [BENEFIT] — [why this drives downloads]
+5. [ACTION VERB] + [BENEFIT] — [why this drives downloads]</div>
+
+  <!-- Step 1.4 -->
+  <h3>Step 1.4: Refine with User</h3>
+  <div class="card">
+    <p><strong>DO NOT proceed until user explicitly confirms the benefits.</strong> This is iterative:</p>
+    <ul>
+      <li>Let user reorder, reword, add, or remove benefits</li>
+      <li>Suggest alternatives if user isn't happy</li>
+      <li>Explain reasoning — why a particular verb or phrasing converts better</li>
+      <li>User has final say, but push back (politely) on generic choices</li>
+    </ul>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ============================================ -->
+  <!-- STEP 2: SIMULATOR SCREENSHOTS -->
+  <!-- ============================================ -->
+  <h2 id="step2">4. Step 2 — Simulator Screenshots</h2>
+
+  <div class="card card-highlight">
+    <p>Capture 5-8 simulator screenshots to feed the generation tool. Quality in = quality out.</p>
+  </div>
+
+  <h3>What to Capture</h3>
+  <div class="card card-go">
+    <h3>CAPTURE — Core Loop Screens</h3>
+    <ul>
+      <li>Main dashboard / home screen</li>
+      <li>Primary action screen (the thing the user DOES)</li>
+      <li>Result / reward screen (the thing the user GETS)</li>
+      <li>History / progress screen</li>
+      <li>Different data states of key screens (populated, mid-action)</li>
+    </ul>
+  </div>
+
+  <div class="card card-kill">
+    <h3>SKIP — Non-Core Screens</h3>
+    <ul>
+      <li>Settings / preferences</li>
+      <li>Onboarding / tutorial</li>
+      <li>Paywall / subscription</li>
+      <li>Login / registration</li>
+      <li>Empty states</li>
+      <li>Debug or developer screens</li>
+    </ul>
+  </div>
+
+  <h3>Data in Screenshots</h3>
+  <div class="card card-warn">
+    <p><strong>Stage ideal-looking data.</strong> Screenshots should look impressive:</p>
+    <ul>
+      <li>Big numbers, full history, completed streaks</li>
+      <li>Nice-looking charts with upward trends</li>
+      <li>Multiple items/entries showing the app is well-used</li>
+      <li>Consistent light OR dark mode across all screenshots</li>
+      <li>Clean status bar (no low battery, no debug indicators)</li>
+    </ul>
+    <p style="margin-top: 0.75rem;"><strong>Never show:</strong> placeholder data, empty lists, "lorem ipsum", sparse content, error states</p>
+  </div>
+
+  <h3>Minimum Screenshot Count</h3>
+  <table>
+    <thead>
+      <tr><th>App Screens</th><th>Strategy</th><th>Screenshot Count</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>5+ core screens</td>
+        <td>One screenshot per screen</td>
+        <td>5-8</td>
+      </tr>
+      <tr>
+        <td>3-4 core screens</td>
+        <td>Key screens + different data states for variety</td>
+        <td>5-6</td>
+      </tr>
+      <tr>
+        <td>1-2 core screens</td>
+        <td>Multiple data states + interaction moments</td>
+        <td>5 (minimum)</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="divider"></div>
+
+  <!-- ============================================ -->
+  <!-- STEP 3: LOCALIZATION CHECK -->
+  <!-- ============================================ -->
+  <h2 id="step3">5. Step 3 — Localization Check</h2>
+
+  <div class="card">
+    <p>Not all apps need localized screenshots. Check per app:</p>
+
+    <div class="prompt-box">LOCALIZATION CHECK:
+Does this app target a non-English market?  YES / NO
+
+If YES:
+  - Target language(s): ___
+  - Translate benefit headlines: YES
+  - Different screenshots needed? (cultural data, RTL layout): YES / NO
+  - If different screenshots: retake simulator screenshots with localized data
+
+If NO:
+  - English only. Proceed to Step 4.</div>
+  </div>
+
+  <div class="callout">
+    <strong>When to localize:</strong> Apps targeting specific regions (Arabic markets, Latin America, South Africa, etc.) benefit from localized headlines. Same screenshots, translated text is the minimum. Full localization (different data, cultural cues) is ideal but optional.
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ============================================ -->
+  <!-- STEP 4: BRAND COLOR -->
+  <!-- ============================================ -->
+  <h2 id="step4">6. Step 4 — Brand Color</h2>
+
+  <div class="card">
+    <p><strong>Auto-detect from app's codebase design color.</strong> The tool analyzes your app's theme/design system and picks the primary brand color automatically.</p>
+
+    <h3>How It Works</h3>
+    <ul>
+      <li>Tool reads your codebase for color constants, theme files, design tokens</li>
+      <li>Selects the dominant brand color</li>
+      <li>Uses it as the screenshot background color</li>
+      <li>All 5 screenshots share the same background for consistency</li>
+    </ul>
+
+    <h3>Override</h3>
+    <p>If the auto-detected color looks wrong (too light, too muted, poor contrast with white text), you can override with a specific hex value. But prefer the auto-detected color — it matches your app.</p>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ============================================ -->
+  <!-- STEP 5: GENERATION -->
+  <!-- ============================================ -->
+  <h2 id="step5">7. Step 5 — Generation</h2>
+
+  <div class="card card-highlight">
+    <p>The tool handles this automatically via its 2-stage pipeline. You just trigger it.</p>
+  </div>
+
+  <h3>Pipeline</h3>
+  <div class="flow-step">
+    <div class="flow-num">1</div>
+    <div class="flow-content">
+      <strong>Scaffold (Deterministic)</strong> — <code>compose.py</code> creates pixel-perfect 1290×2796 PNG with benefit headline text + device frame + your simulator screenshot composited inside. Same layout every time.
+    </div>
+  </div>
+  <div class="flow-step">
+    <div class="flow-num">2</div>
+    <div class="flow-content">
+      <strong>AI Enhancement (Gemini/Nano Banana Pro)</strong> — Replaces device frame with photorealistic mockup, adds optional breakout elements, polishes shadows and depth. Generates <strong>3 versions</strong> per screenshot.
+    </div>
+  </div>
+  <div class="flow-step">
+    <div class="flow-num">3</div>
+    <div class="flow-content">
+      <strong>Crop & Resize</strong> — <code>sips</code> crops from 9:16 to Apple's exact aspect ratio, resizes to 1290×2796px. App Store-ready.
+    </div>
+  </div>
+
+  <h3>Output Per Benefit</h3>
+  <pre>screenshots/
+├── 01-benefit-slug/
+│   ├── scaffold.png          # Raw compose output
+│   ├── v1-resized.jpg        # AI version 1 (cropped)
+│   ├── v2-resized.jpg        # AI version 2 (cropped)
+│   └── v3-resized.jpg        # AI version 3 (cropped)
+├── 02-benefit-slug/
+│   └── ...
+├── final/                    # Your picks go here
+│   ├── 01-benefit-slug.jpg
+│   ├── 02-benefit-slug.jpg
+│   └── ...
+└── showcase.png              # Side-by-side preview</pre>
+
+  <div class="divider"></div>
+
+  <!-- ============================================ -->
+  <!-- STEP 6: VERSION SELECTION -->
+  <!-- ============================================ -->
+  <h2 id="step6">8. Step 6 — Version Selection</h2>
+
+  <div class="card card-highlight">
+    <p><strong>Rule: Pick the cleanest version.</strong> You're not a designer. Don't overthink it. Use this checklist:</p>
+  </div>
+
+  <h3>Selection Checklist</h3>
+  <table>
+    <thead>
+      <tr><th>Criteria</th><th>Check</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Headline text is fully readable</td>
+        <td>No text cut off, no overlapping elements</td>
+      </tr>
+      <tr>
+        <td>Device frame looks clean</td>
+        <td>No warped edges, no missing corners, no artifacts</td>
+      </tr>
+      <tr>
+        <td>App screenshot is visible and sharp</td>
+        <td>Not blurry, not obscured by breakout elements</td>
+      </tr>
+      <tr>
+        <td>No AI artifacts</td>
+        <td>No weird shadows, no distorted UI elements, no hallucinated buttons</td>
+      </tr>
+      <tr>
+        <td>Consistent with other screenshots in the set</td>
+        <td>Same device frame style, same text treatment, same overall feel</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="grid-2">
+    <div class="card card-go">
+      <h3>PICK This Version</h3>
+      <ul>
+        <li>Text is crisp and centered</li>
+        <li>Device frame is clean and realistic</li>
+        <li>Screenshot inside device is clear</li>
+        <li>Minimal visual noise</li>
+        <li>Breakout element (if any) enhances, doesn't distract</li>
+      </ul>
+    </div>
+    <div class="card card-kill">
+      <h3>REJECT This Version</h3>
+      <ul>
+        <li>Text is partially cut off or hard to read</li>
+        <li>Device frame has warped or blurry edges</li>
+        <li>AI added weird visual elements that don't exist in app</li>
+        <li>Breakout element covers important UI</li>
+        <li>Looks different from other screenshots in set</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="callout">
+    <strong>If all 3 versions have issues:</strong> Regenerate. The tool can produce 3 new versions. Check if the scaffold itself has problems (bad screenshot crop, text too long) — fix input before regenerating.
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ============================================ -->
+  <!-- STEP 7: FINAL OUTPUT -->
+  <!-- ============================================ -->
+  <h2 id="step7">9. Step 7 — Final Output</h2>
+
+  <div class="card card-go">
+    <h3>Deliverables</h3>
+    <table>
+      <thead>
+        <tr><th>File</th><th>Spec</th><th>Purpose</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>final/01-benefit-slug.jpg</code></td>
+          <td>1290 × 2796px</td>
+          <td>App Store Connect upload — iPhone 6.7"</td>
+        </tr>
+        <tr>
+          <td><code>final/02-benefit-slug.jpg</code></td>
+          <td>1290 × 2796px</td>
+          <td>App Store Connect upload</td>
+        </tr>
+        <tr>
+          <td><code>final/03-benefit-slug.jpg</code></td>
+          <td>1290 × 2796px</td>
+          <td>App Store Connect upload</td>
+        </tr>
+        <tr>
+          <td><code>final/04-benefit-slug.jpg</code></td>
+          <td>1290 × 2796px</td>
+          <td>App Store Connect upload</td>
+        </tr>
+        <tr>
+          <td><code>final/05-benefit-slug.jpg</code></td>
+          <td>1290 × 2796px</td>
+          <td>App Store Connect upload</td>
+        </tr>
+        <tr>
+          <td><code>showcase.png</code></td>
+          <td>~2500 × 900px</td>
+          <td>Side-by-side preview for review</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>Upload Order</h3>
+  <div class="card">
+    <p>Screenshots appear in App Store in the order you upload. Order matters — first screenshot gets the most views.</p>
+    <table>
+      <thead>
+        <tr><th>Position</th><th>What to Show</th><th>Why</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="tag tag-go">1st</span></td>
+          <td>Your strongest benefit — the #1 reason to download</td>
+          <td>80% of users only see the first 1-2 screenshots</td>
+        </tr>
+        <tr>
+          <td><span class="tag tag-data">2nd</span></td>
+          <td>The core loop in action — what using the app looks like</td>
+          <td>Shows the app is real and functional</td>
+        </tr>
+        <tr>
+          <td><span class="tag tag-data">3rd</span></td>
+          <td>Secondary benefit — reinforces value</td>
+          <td>For users who swipe past the first two</td>
+        </tr>
+        <tr>
+          <td><span class="tag tag-warn">4th-5th</span></td>
+          <td>Supporting benefits — additional features</td>
+          <td>For detail-oriented users comparing apps</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ============================================ -->
+  <!-- QUICK CHECKLIST -->
+  <!-- ============================================ -->
+  <h2 id="checklist">10. Quick Checklist</h2>
+
+  <div class="card card-highlight">
+    <p>Run through this before uploading to App Store Connect:</p>
+  </div>
+
+  <div class="prompt-box">PRE-UPLOAD CHECKLIST:
+
+□ 5 screenshots generated at 1290×2796px
+□ Each screenshot maps to a confirmed benefit
+□ Benefit headlines use action verbs (TRACK, CRUSH, SEE, etc.)
+□ Headlines are specific, not generic
+□ Core loop screens only (no settings, onboarding, paywall)
+□ Staged ideal data (impressive numbers, full history)
+□ Cleanest AI version selected for each (no artifacts)
+□ Consistent look across all 5 screenshots (same device frame, color, text style)
+□ Strongest benefit is in position #1
+□ Localization applied if targeting non-English market
+□ Showcase image reviewed — does the set look cohesive?
+
+READY TO UPLOAD: YES / NO</div>
+
+  <div class="divider"></div>
+
+  <!-- ============================================ -->
+  <!-- AI INSTRUCTION -->
+  <!-- ============================================ -->
+  <div class="prompt-box">AI INSTRUCTION: When user triggers screenshot generation for an app:
+1. Follow Steps 1-7 in order. Do not skip.
+2. Step 1 (Benefit Discovery) is the most critical — spend time here.
+3. Step 1.3 rules are STRICT: action verb + user benefit + specific + answer "why download?"
+4. Do NOT proceed past Step 1 until user confirms benefits.
+5. For simulator screenshots (Step 2): only core loop screens, staged ideal data.
+6. For version selection (Step 6): always pick cleanest version.
+7. Be concise in communication. No filler.</div>
+
+</body>
+</html>
